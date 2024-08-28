@@ -10,9 +10,7 @@ pub struct InspectArgs {
 }
 
 pub fn entry(args: InspectArgs) {
-    let rpc_client = RpcClient::new(
-        "https://mainnet.helius-rpc.com/?api-key=6c48bd6c-00b7-421a-aefb-7fb2bc042fa2",
-    );
+    let rpc_client = RpcClient::new("https://api.mainnet-beta.solana.com");
 
     let block = match rpc_client.get_block_with_config(
         args.slot,
