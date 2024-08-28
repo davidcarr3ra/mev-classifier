@@ -1,0 +1,16 @@
+[package]
+edition.workspace = true
+name = "inspection"
+version = "0.1.0"
+
+[lib]
+crate-type = ["lib"]
+name = "inspection"
+
+[dependencies]
+base58 = "0.2.0"
+solana-sdk = { workspace = true }
+solana-transaction-status = { workspace = true }
+spl-token = { workspace = true }
+
+thiserror = "1.0.63"

@@ -1,0 +1,12 @@
+[workspace]
+members = ["packages/*"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+
+[workspace.dependencies]
+solana-client = "=1.18.22"
+solana-sdk = "=1.18.22"
+solana-transaction-status = "=1.18.22"
+spl-token = "^4"
