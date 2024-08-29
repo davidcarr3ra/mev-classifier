@@ -8,4 +8,6 @@ solana-client = { workspace = true }
 solana-transaction-status = { workspace = true }
 
 clap = { version = "4.5.16", features = ["derive"] }
+classification = { version = "0.1.0", path = "../classification" }
 inspection = { version = "0.1.0", path = "../inspection" }
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt"] }
