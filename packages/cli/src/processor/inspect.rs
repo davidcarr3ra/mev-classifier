@@ -9,6 +9,9 @@ use solana_transaction_status::{TransactionDetails, UiTransactionEncoding};
 pub struct InspectArgs {
     #[clap(long, help = "The slot to inspect.")]
     slot: u64,
+
+    #[clap(long, help = "Filter transactions by signature.")]
+    filter_transaction: Option<String>,
 }
 
 pub fn entry(args: InspectArgs) {
@@ -59,11 +62,24 @@ pub fn entry(args: InspectArgs) {
         // In the future, this will be entire block, or even multiple blocks.
         // Either way, the plumbing is there for this to easily happen.
         let signature = v_txn.signatures.first().unwrap().clone();
+
+        if let Some(filter) = &args.filter_transaction {
+            if signature.to_string() != *filter {
+                continue;
+            }
+        }
+
         let tx_action = TransactionAction::new(signature);
         let tx_id = tree.insert(block_id, tx_action.into());
 
         let c_txn = ClassifiableTransaction::new(v_txn, txn.meta.unwrap());
-        classify_transaction(c_txn, &mut tree, tx_id);
+
+        match classify_transaction(c_txn, &mut tree, tx_id) {
+            Ok(_) => {}
+            Err(err) => {
+                eprintln!("Failed to classify transaction: {:?}", err);
+            }
+        }
     }
 
     if tree.num_children(block_id) > 0 {

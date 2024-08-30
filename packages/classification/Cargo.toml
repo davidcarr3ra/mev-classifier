@@ -8,6 +8,7 @@ crate-type = ["lib"]
 name = "classification"
 
 [dependencies]
+anchor-lang = { workspace = true }
 solana-program = { workspace = true }
 solana-sdk = { workspace = true }
 solana-transaction-status = { workspace = true }
