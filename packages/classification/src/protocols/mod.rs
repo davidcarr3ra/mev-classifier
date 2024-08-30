@@ -5,6 +5,7 @@ use crate::{ActionNodeId, ActionTree, ClassifiableTransaction, ProgramInvocation
 mod jupiter_v6;
 mod orca_whirlpools;
 mod system_program;
+mod vote_program;
 
 #[derive(Debug, Error)]
 pub enum ClassifyInstructionError {
@@ -32,6 +33,8 @@ pub fn classify_instruction(
 
     let action = match program_id {
         solana_sdk::system_program::ID => system_program::classify_instruction(txn, ix)
+            .map_err(|err| ClassifyInstructionError::ClassificationError(err.into())),
+        solana_sdk::vote::program::ID => vote_program::classify_instruction(txn, ix)
             .map_err(|err| ClassifyInstructionError::ClassificationError(err.into())),
         orca_whirlpools::ID => orca_whirlpools::classify_instruction(txn, ix)
             .map_err(|err| ClassifyInstructionError::ClassificationError(err.into())),
