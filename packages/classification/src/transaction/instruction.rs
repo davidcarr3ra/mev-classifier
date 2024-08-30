@@ -1,4 +1,3 @@
-use base58::FromBase58;
 use solana_sdk::instruction::CompiledInstruction;
 use solana_transaction_status::{UiCompiledInstruction, UiInstruction};
 use thiserror::Error;
@@ -11,8 +10,8 @@ pub enum ClassifiableInstructionError {
     #[error("Unsupported data format")]
     Unsupported,
 
-    #[error("Failed to decode data")]
-    DecodeBase58Error,
+    #[error(transparent)]
+    DecodeBase58Error(#[from] bs58::decode::Error),
 }
 
 type Result<T> = std::result::Result<T, ClassifiableInstructionError>;
@@ -48,10 +47,7 @@ impl ClassifiableInstruction {
             .ok_or_else(|| ClassifiableInstructionError::MissingStackHeight)?;
 
         // TODO: Support different encoding formats
-        let data = ix
-            .data
-            .from_base58()
-            .map_err(|_| ClassifiableInstructionError::DecodeBase58Error)?;
+        let data = bs58::decode(ix.data).into_vec()?;
 
         Ok(Self {
             program_id_index: ix.program_id_index,

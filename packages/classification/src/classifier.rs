@@ -22,7 +22,6 @@ pub fn classify_transaction(
     let mut idx = 0;
 
     while idx < txn.instructions.len() {
-        println!("root level classification: {:?}", idx);
         let indexes_used = classify_instruction(&txn, idx, tree, parent)?;
         idx += indexes_used;
     }

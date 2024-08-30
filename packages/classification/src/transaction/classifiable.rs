@@ -77,6 +77,7 @@ impl ClassifiableTransaction {
 
         if let Some(inners_idx) = inners_idx {
             let mut inners = inner_instructions.remove(inners_idx);
+
             let mut ui_instructions = Vec::with_capacity(inners.instructions.len());
 
             while inners.instructions.len() > 0 {
@@ -84,7 +85,10 @@ impl ClassifiableTransaction {
 
                 let decoded = match ClassifiableInstruction::from_ui(inner) {
                     Ok(decoded) => decoded,
-                    Err(_) => return None,
+                    Err(err) => {
+                        tracing::trace!("Failed to decode inner instruction: {:?}", err);
+                        return None;
+                    }
                 };
 
                 ui_instructions.push(decoded);

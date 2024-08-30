@@ -1059,8 +1059,8 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anyhow",
- "base58",
  "bincode",
+ "bs58 0.5.1",
  "indextree",
  "solana-program",
  "solana-sdk",

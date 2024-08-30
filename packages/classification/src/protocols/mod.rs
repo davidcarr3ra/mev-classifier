@@ -53,10 +53,6 @@ pub fn classify_instruction(
     };
 
     let current_stack_height = ix.stack_height;
-    println!(
-        "index: {} current_stack_height: {:?}",
-        index, current_stack_height
-    );
     index += 1;
 
     while index < txn.instructions.len() {
