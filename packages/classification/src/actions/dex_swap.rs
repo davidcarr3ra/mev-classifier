@@ -4,7 +4,7 @@ mod whirlpools;
 pub use jupiter_v6::*;
 pub use whirlpools::*;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum DexSwapAction {
     Whirlpools(WhirlpoolsSwapAction),
     JupiterV6(JupiterV6SwapAction),

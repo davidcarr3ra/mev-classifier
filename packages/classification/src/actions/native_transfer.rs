@@ -2,7 +2,7 @@ use solana_sdk::pubkey::Pubkey;
 
 use super::Action;
 
-#[derive(Clone, Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct NativeTransferAction {
     pub from: Pubkey,
     pub to: Pubkey,

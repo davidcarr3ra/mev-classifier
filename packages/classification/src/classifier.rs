@@ -7,12 +7,12 @@ use crate::{
 };
 
 #[derive(Debug, Error)]
-pub enum ClassifyTransactionError {
+pub enum ClassifyError {
     #[error(transparent)]
     ClassifyInstructionError(#[from] ClassifyInstructionError),
 }
 
-type Result<T> = std::result::Result<T, ClassifyTransactionError>;
+type Result<T> = std::result::Result<T, ClassifyError>;
 
 pub fn classify_transaction(
     txn: ClassifiableTransaction,

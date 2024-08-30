@@ -14,7 +14,7 @@ pub use program::*;
 pub use transaction::*;
 pub use vote::*;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Action {
     Transaction(TransactionAction),
     Block(BlockAction),

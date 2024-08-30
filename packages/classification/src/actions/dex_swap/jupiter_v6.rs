@@ -2,7 +2,7 @@ use crate::Action;
 
 use super::DexSwapAction;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct JupiterV6SwapAction {
     pub in_amount: u64,
     pub quoted_out_amount: u64,
@@ -21,7 +21,7 @@ impl Into<DexSwapAction> for JupiterV6SwapAction {
 }
 
 /// Token ledger swaps do not reveal in amount
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct JupiterV6LedgerSwapAction {
     pub quoted_out_amount: u64,
 }

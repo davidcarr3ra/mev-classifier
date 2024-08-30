@@ -18,7 +18,7 @@ pub fn is_jito_tip_address(address: &Pubkey) -> bool {
     JITO_TIP_ADDRESSES.contains(address)
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct JitoTipAction {
     pub tipper: Pubkey,
     pub tip_amount: u64,

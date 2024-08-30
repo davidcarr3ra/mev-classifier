@@ -1,6 +1,6 @@
 use super::Action;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct BlockAction {
     pub slot: u64,
 }

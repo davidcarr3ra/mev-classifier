@@ -2,7 +2,7 @@ use solana_sdk::{pubkey::Pubkey, vote::state::VoteStateUpdate};
 
 use super::Action;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum VoteAction {
     CompactUpdateVoteState(CompactUpdateVoteStateAction),
 }
@@ -13,7 +13,7 @@ impl VoteAction {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct CompactUpdateVoteStateAction {
     pub vote_authority: Pubkey,
     pub update: VoteStateUpdate,

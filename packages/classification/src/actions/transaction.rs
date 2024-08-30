@@ -4,7 +4,7 @@ use super::Action;
 
 /// Basic action signifying all sub-actions happened in the
 /// same transaction
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct TransactionAction {
     pub signature: Signature,
 }

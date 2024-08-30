@@ -1,10 +1,12 @@
-use indextree::{Arena, NodeId, Traverse};
+use indextree::{Arena, Descendants, Node, NodeEdge, NodeId};
 
 use crate::actions::Action;
 
 mod display;
 
 pub type ActionNodeId = NodeId;
+pub type ActionNode = Node<Action>;
+pub type ActionNodeEdge = NodeEdge;
 
 pub struct ActionTree {
     arena: Arena<Action>,
@@ -24,16 +26,24 @@ impl ActionTree {
         self.root_id
     }
 
+    pub fn get(&self, node_id: ActionNodeId) -> Option<&ActionNode> {
+        self.arena.get(node_id)
+    }
+
     pub fn insert(&mut self, parent: ActionNodeId, action: Action) -> ActionNodeId {
         let child_id = parent.append_value(action, &mut self.arena);
         child_id
+    }
+
+    pub fn remove_subtree(&mut self, node: ActionNodeId) {
+        node.remove_subtree(&mut self.arena);
     }
 
     pub fn num_children(&self, parent: ActionNodeId) -> usize {
         parent.children(&self.arena).count()
     }
 
-    pub fn traverse<'a>(&'a self, node: ActionNodeId) -> Traverse<'a, Action> {
-        node.traverse(&self.arena)
+    pub fn descendants<'a>(&'a self, parent: ActionNodeId) -> Descendants<'a, Action> {
+        parent.descendants(&self.arena)
     }
 }

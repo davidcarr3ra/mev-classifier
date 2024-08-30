@@ -2,6 +2,7 @@ use clap::Args;
 use classification::{
     classify_transaction, ActionTree, BlockAction, ClassifiableTransaction, TransactionAction,
 };
+use inspection::filtering::{post_process, PostProcessConfig};
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcBlockConfig};
 use solana_transaction_status::{TransactionDetails, UiTransactionEncoding};
 
@@ -81,6 +82,14 @@ pub fn entry(args: InspectArgs) {
             }
         }
     }
+
+    post_process(
+        PostProcessConfig {
+            retain_votes: false,
+            remove_empty_transactions: true,
+        },
+        &mut tree,
+    );
 
     if tree.num_children(block_id) > 0 {
         println!("{}", tree);

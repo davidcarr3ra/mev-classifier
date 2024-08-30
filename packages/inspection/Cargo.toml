@@ -9,6 +9,7 @@ name = "inspection"
 
 [dependencies]
 base58 = "0.2.0"
+classification = { version = "0.1.0", path = "../classification" }
 solana-sdk = { workspace = true }
 solana-transaction-status = { workspace = true }
 spl-token = { workspace = true }
