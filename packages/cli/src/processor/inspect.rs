@@ -5,6 +5,9 @@ use classification::{
 use inspection::filtering::{post_process, PostProcessConfig};
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcBlockConfig};
 use solana_transaction_status::{TransactionDetails, UiTransactionEncoding};
+use std::fs::{self, File};
+use std::io::Write;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Args, Debug)]
 pub struct InspectArgs {
@@ -87,11 +90,27 @@ pub fn entry(args: InspectArgs) {
         PostProcessConfig {
             retain_votes: false,
             remove_empty_transactions: true,
+            cluster_jito_bundles: true,
         },
         &mut tree,
     );
 
     if tree.num_children(block_id) > 0 {
-        println!("{}", tree);
+        // Create results directory if it doesn't exist
+        fs::create_dir_all("results").expect("Failed to create results directory");
+
+        // Get the current timestamp
+        let start = SystemTime::now();
+        let since_the_epoch = start.duration_since(UNIX_EPOCH).expect("Time went backwards");
+        let timestamp = since_the_epoch.as_secs();
+
+        // Create the file path
+        let file_path = format!("results/{}_results.txt", timestamp);
+
+        // Write the tree to the file
+        let mut file = File::create(&file_path).expect("Failed to create file");
+        write!(file, "{}", tree).expect("Failed to write to file");
+
+        println!("Results written to {}", file_path);
     }
 }

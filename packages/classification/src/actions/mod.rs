@@ -5,6 +5,7 @@ mod native_transfer;
 mod program;
 mod transaction;
 mod vote;
+mod jito_bundles;
 
 pub use block::*;
 pub use dex_swap::*;
@@ -13,6 +14,7 @@ pub use native_transfer::*;
 pub use program::*;
 pub use transaction::*;
 pub use vote::*;
+pub use jito_bundles::*;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Action {
@@ -20,10 +22,10 @@ pub enum Action {
     Block(BlockAction),
     ProgramInvocation(ProgramInvocationAction),
     Vote(VoteAction),
-
     NativeTransfer(NativeTransferAction),
     JitoTip(JitoTipAction),
     DexSwap(DexSwapAction),
+    JitoBundle(JitoBundleAction),
 }
 
 impl Action {
@@ -40,9 +42,10 @@ impl Action {
             Action::DexSwap(dex_swap) => dex_swap.recurse_during_classify(),
             Action::ProgramInvocation(_) => true,
             Action::Vote(vote) => vote.recurse_during_classify(),
-
+            Action::JitoBundle(_) => false,
             Action::Transaction(_) => unreachable!("Instructions can not be transactions"),
             Action::Block(_) => unreachable!("Instructions can not be blocks"),
+            
         }
     }
 }

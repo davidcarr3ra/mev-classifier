@@ -1,8 +1,8 @@
-mod actions;
 mod classifier;
 mod protocols;
 mod transaction;
-mod tree;
+pub mod tree;
+pub mod actions;
 
 pub use actions::*;
 pub use classifier::classify_transaction;
