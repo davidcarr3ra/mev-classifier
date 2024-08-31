@@ -8,11 +8,11 @@ use::reqwest::blocking::get;
 
 #[derive(Deserialize)]
 struct JitoBundle {
-    bundle_id: String,
+    bundleId: String,
     timestamp: String,
     tippers: Vec<String>,
     transactions: Vec<String>,
-    landed_tip_lamports: u64,
+    landedTipLamports: u64,
 }
 
 pub struct PostProcessConfig {
@@ -90,10 +90,10 @@ fn process_jito_bundles(tree: &mut ActionTree) -> Result<(), Box<dyn std::error:
 
     for bundle in bundles {
         let bundle_node = tree.insert(tree.root(), Action::JitoBundle(JitoBundleAction {
-            id: bundle.bundle_id,
+            bundleId: bundle.bundleId,
             timestamp: bundle.timestamp,
             tippers: bundle.tippers,
-            landed_tip_lamports: bundle.landed_tip_lamports,
+            landedTipLamports: bundle.landedTipLamports,
         }));
 
         for tx_hash in bundle.transactions.iter() {

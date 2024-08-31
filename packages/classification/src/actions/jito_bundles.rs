@@ -2,19 +2,19 @@ use super::Action;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct JitoBundleAction {
-    pub id: String,
+    pub bundleId: String,
     pub timestamp: String,
     pub tippers: Vec<String>,
-    pub landed_tip_lamports: u64,
+    pub landedTipLamports: u64,
 }
 
 impl JitoBundleAction {
-    pub fn new(id: String, timestamp: String, tippers: Vec<String>, landed_tip_lamports: u64) -> Self {
+    pub fn new(bundleId: String, timestamp: String, tippers: Vec<String>, landedTipLamports: u64) -> Self {
         Self {
-            id,
+            bundleId,
             timestamp,
             tippers,
-            landed_tip_lamports,
+            landedTipLamports,
         }
     }
 }
