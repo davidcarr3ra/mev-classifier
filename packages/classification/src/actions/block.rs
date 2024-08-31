@@ -1,18 +1,20 @@
-use super::Action;
+use macros::action;
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct BlockAction {
+use super::ActionTrait;
+
+#[action]
+pub struct Block {
     pub slot: u64,
 }
 
-impl BlockAction {
+impl Block {
     pub fn new(slot: u64) -> Self {
         Self { slot }
     }
 }
 
-impl Into<Action> for BlockAction {
-    fn into(self) -> Action {
-        Action::Block(self)
+impl ActionTrait for Block {
+    fn recurse_during_classify(&self) -> bool {
+        unreachable!("Instructions can not be blocks")
     }
 }

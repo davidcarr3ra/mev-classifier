@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::{ActionNodeId, ActionTree, ClassifiableTransaction, ProgramInvocationAction};
+use crate::{actions::ActionTrait, ActionNodeId, ActionTree, ClassifiableTransaction};
 
 mod jupiter_v6;
 mod orca_whirlpools;
@@ -12,11 +12,26 @@ pub enum ClassifyInstructionError {
     #[error("Missing program id")]
     MissingProgramId,
 
+    #[error("Unknown program id")]
+    UnknownProgramId,
+
     #[error(transparent)]
     ClassificationError(#[from] anyhow::Error),
 }
 
 type Result<T> = std::result::Result<T, ClassifyInstructionError>;
+
+macro_rules! classify_instruction_matcher {
+    ($program_id:expr, $txn:expr, $ix:expr, $($mod:ident),* $(,)?) => {
+        match $program_id {
+            $(
+                $mod::ID => $mod::classify_instruction($txn, $ix)
+                    .map_err(|err| ClassifyInstructionError::ClassificationError(err.into())),
+            )*
+            _ => Err(ClassifyInstructionError::UnknownProgramId),
+        }
+    };
+}
 
 pub fn classify_instruction(
     txn: &ClassifiableTransaction,
@@ -31,18 +46,28 @@ pub fn classify_instruction(
         .get_pubkey(ix.program_id_index)
         .ok_or_else(|| ClassifyInstructionError::MissingProgramId)?;
 
-    let action = match program_id {
-        solana_sdk::system_program::ID => system_program::classify_instruction(txn, ix)
-            .map_err(|err| ClassifyInstructionError::ClassificationError(err.into())),
-        solana_sdk::vote::program::ID => vote_program::classify_instruction(txn, ix)
-            .map_err(|err| ClassifyInstructionError::ClassificationError(err.into())),
-        orca_whirlpools::ID => orca_whirlpools::classify_instruction(txn, ix)
-            .map_err(|err| ClassifyInstructionError::ClassificationError(err.into())),
-        jupiter_v6::ID => jupiter_v6::classify_instruction(txn, ix)
-            .map_err(|err| ClassifyInstructionError::ClassificationError(err.into())),
+    let action_result = classify_instruction_matcher!(
+        program_id,
+        txn,
+        ix,
+        //
+        // Register all classifier modules here
+        //
+        system_program,
+        vote_program,
+        orca_whirlpools,
+        jupiter_v6
+    );
 
-        _ => Ok(Some(ProgramInvocationAction { program_id }.into())),
-    }?;
+    let action = match action_result {
+        Ok(action) => action,
+
+        // Still want to classify unknown programs
+        Err(ClassifyInstructionError::UnknownProgramId) => None,
+
+        // All other errors indicate some sort of actual failure
+        Err(err) => return Err(err),
+    };
 
     let (recurse, child) = if let Some(action) = action {
         let recurse = action.recurse_during_classify();

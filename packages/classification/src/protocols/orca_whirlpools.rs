@@ -3,7 +3,7 @@ use solana_sdk::pubkey::Pubkey;
 use thiserror::Error;
 
 use crate::{
-    transaction::ClassifiableInstruction, Action, ClassifiableTransaction, DexSwapAction,
+    transaction::ClassifiableInstruction, Action, ClassifiableTransaction, DexSwap,
     WhirlpoolsSwapAction,
 };
 
@@ -59,7 +59,7 @@ fn classify_swap(txn: &ClassifiableTransaction, ix: &ClassifiableInstruction) ->
         amount: args.amount,
     };
 
-    Ok(Action::DexSwap(DexSwapAction::Whirlpools(action)))
+    Ok(Action::DexSwap(DexSwap::Whirlpools(action)))
 }
 
 fn classify_swap_v2(txn: &ClassifiableTransaction, ix: &ClassifiableInstruction) -> Result<Action> {
@@ -77,5 +77,5 @@ fn classify_swap_v2(txn: &ClassifiableTransaction, ix: &ClassifiableInstruction)
         amount: args.amount,
     };
 
-    Ok(Action::DexSwap(DexSwapAction::Whirlpools(action)))
+    Ok(Action::DexSwap(DexSwap::Whirlpools(action)))
 }

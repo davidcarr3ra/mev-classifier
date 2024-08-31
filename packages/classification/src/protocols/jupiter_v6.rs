@@ -3,7 +3,7 @@ use solana_sdk::pubkey::Pubkey;
 use thiserror::Error;
 
 use crate::{
-    transaction::ClassifiableInstruction, Action, ClassifiableTransaction,
+    transaction::ClassifiableInstruction, Action, ClassifiableTransaction, DexSwap,
     JupiterV6LedgerSwapAction, JupiterV6SwapAction,
 };
 
@@ -14,8 +14,8 @@ pub enum JupiterV6Error {
     #[error("Invalid instruction data length")]
     InvalidLength,
 
-    #[error("Failed to deserialize jupiter v6 instruction")]
-    DeserializationError,
+    #[error("Failed to deserialize jupiter v6 instruction: {0}")]
+    DeserializationError(#[source] anyhow::Error),
 }
 
 type Result<T> = std::result::Result<T, JupiterV6Error>;
@@ -52,12 +52,12 @@ fn classify_route(_txn: &ClassifiableTransaction, ix: &ClassifiableInstruction) 
     let mut data = &ix.data[8..];
 
     let args = jupiter_v6::internal::args::Route::deserialize(&mut data)
-        .map_err(|_| JupiterV6Error::DeserializationError)?;
+        .map_err(|e| JupiterV6Error::DeserializationError(e.into()))?;
 
-    let action = JupiterV6SwapAction {
+    let action = DexSwap::JupiterV6(JupiterV6SwapAction {
         in_amount: args.in_amount,
         quoted_out_amount: args.quoted_out_amount,
-    };
+    });
 
     Ok(action.into())
 }
@@ -69,12 +69,12 @@ fn classify_shared_accounts_route(
     let mut data = &ix.data[8..];
 
     let args = jupiter_v6::internal::args::SharedAccountsRoute::deserialize(&mut data)
-        .map_err(|_| JupiterV6Error::DeserializationError)?;
+        .map_err(|e| JupiterV6Error::DeserializationError(e.into()))?;
 
-    let action = JupiterV6SwapAction {
+    let action = DexSwap::JupiterV6(JupiterV6SwapAction {
         in_amount: args.in_amount,
         quoted_out_amount: args.quoted_out_amount,
-    };
+    });
 
     Ok(action.into())
 }
@@ -86,11 +86,11 @@ fn classify_token_ledger_route(
     let mut data = &ix.data[8..];
 
     let args = jupiter_v6::internal::args::RouteWithTokenLedger::deserialize(&mut data)
-        .map_err(|_| JupiterV6Error::DeserializationError)?;
+        .map_err(|e| JupiterV6Error::DeserializationError(e.into()))?;
 
-    let action = JupiterV6LedgerSwapAction {
+    let action = DexSwap::JupiterV6Ledger(JupiterV6LedgerSwapAction {
         quoted_out_amount: args.quoted_out_amount,
-    };
+    });
 
     Ok(action.into())
 }

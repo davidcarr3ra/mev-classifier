@@ -1,6 +1,6 @@
+use crate::ActionTrait;
+use macros::action;
 use solana_sdk::pubkey::Pubkey;
-
-use super::Action;
 
 // https://jito-foundation.gitbook.io/mev/mev-payment-and-distribution/on-chain-addresses
 pub const JITO_TIP_ADDRESSES: [Pubkey; 8] = [
@@ -18,20 +18,20 @@ pub fn is_jito_tip_address(address: &Pubkey) -> bool {
     JITO_TIP_ADDRESSES.contains(address)
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct JitoTipAction {
+#[action]
+pub struct JitoTip {
     pub tipper: Pubkey,
     pub tip_amount: u64,
 }
 
-impl JitoTipAction {
+impl JitoTip {
     pub fn new(tipper: Pubkey, tip_amount: u64) -> Self {
         Self { tipper, tip_amount }
     }
 }
 
-impl Into<Action> for JitoTipAction {
-    fn into(self) -> Action {
-        Action::JitoTip(self)
+impl ActionTrait for JitoTip {
+    fn recurse_during_classify(&self) -> bool {
+        false
     }
 }

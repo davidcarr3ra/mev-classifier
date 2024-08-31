@@ -1,26 +1,25 @@
+use macros::{action, action_enum};
 use solana_sdk::{pubkey::Pubkey, vote::state::VoteStateUpdate};
 
-use super::Action;
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum VoteAction {
-    CompactUpdateVoteState(CompactUpdateVoteStateAction),
+#[action_enum]
+pub enum Vote {
+    CompactUpdateVoteState(CompactUpdateVoteState),
 }
 
-impl VoteAction {
+impl Vote {
     pub(crate) fn recurse_during_classify(&self) -> bool {
         false
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct CompactUpdateVoteStateAction {
+#[action]
+pub struct CompactUpdateVoteState {
     pub vote_authority: Pubkey,
     pub update: VoteStateUpdate,
 }
 
-impl Into<Action> for CompactUpdateVoteStateAction {
-    fn into(self) -> Action {
-        Action::Vote(VoteAction::CompactUpdateVoteState(self))
+impl Into<Vote> for CompactUpdateVoteState {
+    fn into(self) -> Vote {
+        Vote::CompactUpdateVoteState(self)
     }
 }

@@ -1,22 +1,22 @@
+use crate::ActionTrait;
+use macros::action;
 use solana_sdk::pubkey::Pubkey;
 
-use super::Action;
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct NativeTransferAction {
+#[action]
+pub struct NativeTransfer {
     pub from: Pubkey,
     pub to: Pubkey,
     pub lamports: u64,
 }
 
-impl NativeTransferAction {
+impl NativeTransfer {
     pub fn new(from: Pubkey, to: Pubkey, lamports: u64) -> Self {
         Self { from, to, lamports }
     }
 }
 
-impl Into<Action> for NativeTransferAction {
-    fn into(self) -> Action {
-        Action::NativeTransfer(self)
+impl ActionTrait for NativeTransfer {
+    fn recurse_during_classify(&self) -> bool {
+        false
     }
 }

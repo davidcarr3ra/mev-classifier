@@ -1,22 +1,29 @@
+use macros::action;
 use solana_sdk::signature::Signature;
 
-use super::Action;
+use super::ActionTrait;
 
 /// Basic action signifying all sub-actions happened in the
 /// same transaction
-#[derive(Debug, PartialEq, Eq)]
-pub struct TransactionAction {
+#[action]
+pub struct Transaction {
     pub signature: Signature,
 }
 
-impl TransactionAction {
+impl ActionTrait for Transaction {
+    fn recurse_during_classify(&self) -> bool {
+        unreachable!("Transaction should not be classified")
+    }
+}
+
+impl Transaction {
     pub fn new(signature: Signature) -> Self {
         Self { signature }
     }
 }
 
-impl From<TransactionAction> for Action {
-    fn from(action: TransactionAction) -> Self {
-        Action::Transaction(action)
-    }
-}
+// impl From<Transaction> for Action {
+//     fn from(action: Transaction) -> Self {
+//         Action::Transaction(action)
+//     }
+// }

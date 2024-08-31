@@ -1,10 +1,15 @@
-use solana_sdk::vote::{instruction::VoteInstruction, state::VoteStateUpdate};
+use solana_sdk::{
+    pubkey::Pubkey,
+    vote::{instruction::VoteInstruction, state::VoteStateUpdate},
+};
 use thiserror::Error;
 
 use crate::{
-    transaction::ClassifiableInstruction, Action, ClassifiableTransaction,
-    CompactUpdateVoteStateAction,
+    transaction::ClassifiableInstruction, Action, ClassifiableTransaction, CompactUpdateVoteState,
+    Vote,
 };
+
+pub const ID: Pubkey = solana_sdk::vote::program::ID;
 
 #[derive(Debug, Error)]
 pub enum ClassifyVoteError {
@@ -47,9 +52,11 @@ fn classify_compact_update_vote_state(
         .get_pubkey(ixn.accounts[0])
         .ok_or_else(|| ClassifyVoteError::MissingAccounts)?;
 
-    Ok(CompactUpdateVoteStateAction {
+    let vote_action: Vote = CompactUpdateVoteState {
         vote_authority,
         update,
     }
-    .into())
+    .into();
+
+    Ok(vote_action.into())
 }

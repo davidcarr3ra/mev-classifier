@@ -1,11 +1,13 @@
-use solana_sdk::system_instruction::SystemInstruction;
+use solana_sdk::{pubkey::Pubkey, system_instruction::SystemInstruction};
 use thiserror::Error;
 
 use crate::{
-    actions::{is_jito_tip_address, JitoTipAction, NativeTransferAction},
+    actions::{is_jito_tip_address, JitoTip, NativeTransfer},
     transaction::ClassifiableInstruction,
     Action, ClassifiableTransaction,
 };
+
+pub const ID: Pubkey = solana_sdk::system_program::ID;
 
 #[derive(Error, Debug)]
 pub enum ClassifySystemInstructionError {
@@ -62,8 +64,8 @@ fn classify_transfer(
         .ok_or_else(|| ClassifySystemInstructionError::MissingAccount)?;
 
     if is_jito_tip_address(&recipient) {
-        Ok(JitoTipAction::new(funding, lamports).into())
+        Ok(JitoTip::new(funding, lamports).into())
     } else {
-        Ok(NativeTransferAction::new(funding, recipient, lamports).into())
+        Ok(NativeTransfer::new(funding, recipient, lamports).into())
     }
 }

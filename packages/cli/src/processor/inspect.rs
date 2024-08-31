@@ -1,7 +1,5 @@
 use clap::Args;
-use classification::{
-    classify_transaction, ActionTree, BlockAction, ClassifiableTransaction, TransactionAction,
-};
+use classification::{classify_transaction, ActionTree, Block, ClassifiableTransaction};
 use inspection::filtering::{post_process, PostProcessConfig};
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcBlockConfig};
 use solana_transaction_status::{TransactionDetails, UiTransactionEncoding};
@@ -47,7 +45,7 @@ pub fn entry(args: InspectArgs) {
         args.slot
     );
 
-    let root_action = BlockAction::new(args.slot);
+    let root_action = Block::new(args.slot);
     let mut tree = ActionTree::new(root_action.into());
     let block_id = tree.root();
 
@@ -70,7 +68,7 @@ pub fn entry(args: InspectArgs) {
             }
         }
 
-        let tx_action = TransactionAction::new(signature);
+        let tx_action = classification::Transaction::new(signature);
         let tx_id = tree.insert(block_id, tx_action.into());
 
         let c_txn = ClassifiableTransaction::new(v_txn, txn.meta.unwrap());
@@ -78,7 +76,10 @@ pub fn entry(args: InspectArgs) {
         match classify_transaction(c_txn, &mut tree, tx_id) {
             Ok(_) => {}
             Err(err) => {
-                eprintln!("Failed to classify transaction: {:?}", err);
+                eprintln!(
+                    "Failed to classify transaction: {:?}, signature: {}",
+                    err, signature
+                );
             }
         }
     }
