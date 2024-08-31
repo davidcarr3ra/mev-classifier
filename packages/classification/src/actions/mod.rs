@@ -38,6 +38,7 @@ define_actions! {
     Block,
 
     // Solana system actions
+    ProgramInvocation,
     NativeTransfer,
     Vote,
 

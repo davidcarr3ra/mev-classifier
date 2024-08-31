@@ -11,6 +11,9 @@ pub struct InspectArgs {
 
     #[clap(long, help = "Filter transactions by signature.")]
     filter_transaction: Option<String>,
+
+    #[clap(long, help = "Print the tree.", default_value = "true")]
+    print_tree: bool,
 }
 
 pub fn entry(args: InspectArgs) {
@@ -92,7 +95,7 @@ pub fn entry(args: InspectArgs) {
         &mut tree,
     );
 
-    if tree.num_children(block_id) > 0 {
+    if args.print_tree && tree.num_children(block_id) > 0 {
         println!("{}", tree);
     }
 }

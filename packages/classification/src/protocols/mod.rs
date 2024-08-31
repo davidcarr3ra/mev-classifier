@@ -1,6 +1,8 @@
 use thiserror::Error;
 
-use crate::{actions::ActionTrait, ActionNodeId, ActionTree, ClassifiableTransaction};
+use crate::{
+    actions::ActionTrait, ActionNodeId, ActionTree, ClassifiableTransaction, ProgramInvocation,
+};
 
 mod jupiter_v6;
 mod orca_whirlpools;
@@ -63,7 +65,9 @@ pub fn classify_instruction(
         Ok(action) => action,
 
         // Still want to classify unknown programs
-        Err(ClassifyInstructionError::UnknownProgramId) => None,
+        Err(ClassifyInstructionError::UnknownProgramId) => {
+            Some(ProgramInvocation { program_id }.into())
+        }
 
         // All other errors indicate some sort of actual failure
         Err(err) => return Err(err),
