@@ -26,7 +26,7 @@ macro_rules! classify_instruction_matcher {
             $(
                 <$classifier>::ID => <$classifier>::classify_instruction($txn, $ix)
                     .map_err(|err| {
-                        let classifier = stringify!($mod);
+                        let classifier = stringify!($classifier);
                         ClassifyInstructionError::ClassificationError(Into::<anyhow::Error>::into(err)
                             .context(format!("Classifier: {}", classifier)))
                     }),

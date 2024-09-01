@@ -1,12 +1,12 @@
 mod block;
 mod dex_swap;
-mod jito_tip;
+mod jito;
 mod solana;
 mod transaction;
 
 pub use block::*;
 pub use dex_swap::*;
-pub use jito_tip::*;
+pub use jito::*;
 pub use solana::*;
 pub use transaction::*;
 
@@ -44,5 +44,6 @@ define_actions! {
 
     // 3rd party actions
     JitoTip,
+    JitoBundle,
     DexSwap,
 }

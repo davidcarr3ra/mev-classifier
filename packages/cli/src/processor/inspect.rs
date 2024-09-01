@@ -5,6 +5,9 @@ use classifier_handler::classify_transaction;
 use inspection::filtering::{post_process, PostProcessConfig};
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcBlockConfig};
 use solana_transaction_status::{TransactionDetails, UiTransactionEncoding};
+use std::fs::{self, File};
+use std::io::Write;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Args, Debug)]
 pub struct InspectArgs {
@@ -14,14 +17,19 @@ pub struct InspectArgs {
     #[clap(long, help = "Filter transactions by signature.")]
     filter_transaction: Option<String>,
 
-    #[clap(long, help = "Print the tree.", default_value = "true")]
-    print_tree: bool,
+    #[clap(long, help = "Write tree to results folder", default_value = "true")]
+    write_tree: bool,
+
+    #[clap(
+        long,
+        help = "RPC URL to use for fetching data.",
+        default_value = "https://api.mainnet-beta.solana.com"
+    )]
+    rpc_url: String,
 }
 
 pub fn entry(args: InspectArgs) {
-    let rpc_client = RpcClient::new(
-        "https://mainnet.helius-rpc.com/?api-key=6c48bd6c-00b7-421a-aefb-7fb2bc042fa2",
-    );
+    let rpc_client = RpcClient::new(args.rpc_url);
 
     let block = match rpc_client.get_block_with_config(
         args.slot,
@@ -93,11 +101,29 @@ pub fn entry(args: InspectArgs) {
         PostProcessConfig {
             retain_votes: false,
             remove_empty_transactions: true,
+            cluster_jito_bundles: true,
         },
         &mut tree,
     );
 
-    if args.print_tree && tree.num_children(block_id) > 0 {
-        println!("{}", tree);
+    if args.write_tree && tree.num_children(block_id) > 0 {
+        // Create results directory if it doesn't exist
+        fs::create_dir_all("results").expect("Failed to create results directory");
+
+        // Get the current timestamp
+        let start = SystemTime::now();
+        let since_the_epoch = start
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards");
+        let timestamp = since_the_epoch.as_secs();
+
+        // Create the file path
+        let file_path = format!("results/{}_results.txt", timestamp);
+
+        // Write the tree to the file
+        let mut file = File::create(&file_path).expect("Failed to create file");
+        write!(file, "{}", tree).expect("Failed to write to file");
+
+        println!("Results written to {}", file_path);
     }
 }

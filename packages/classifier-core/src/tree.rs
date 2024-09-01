@@ -45,4 +45,14 @@ impl ActionTree {
     pub fn descendants<'a>(&'a self, parent: ActionNodeId) -> Descendants<'a, Action> {
         parent.descendants(&self.arena)
     }
+
+    pub fn children(&self, node: ActionNodeId) -> impl Iterator<Item = ActionNodeId> + '_ {
+        node.children(&self.arena)
+    }
+
+    pub fn move_node(&mut self, node: ActionNodeId, new_parent: ActionNodeId) {
+        node.remove(&mut self.arena);
+        node.insert_after(new_parent, &mut self.arena);
+
+    }
 }
