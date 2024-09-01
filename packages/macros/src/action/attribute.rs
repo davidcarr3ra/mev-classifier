@@ -9,7 +9,7 @@ pub fn parse_action_attribute(input: ItemStruct) -> TokenStream {
 
     // Generate the derive statement with the common traits
     let expanded = quote! {
-        #[derive(Debug, Clone, PartialEq, Eq)]
+        #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
         #struct_vis struct #struct_name #struct_fields
     };
 
@@ -24,7 +24,7 @@ pub fn parse_action_attribute_enum(input: ItemEnum) -> TokenStream {
 
     // Generate the derive statement with the common traits
     let expanded = quote! {
-        #[derive(Debug, Clone, PartialEq, Eq)]
+        #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
         #enum_vis enum #enum_name #enum_generics {
             #enum_variants
         }
