@@ -1,10 +1,7 @@
+use classifier_core::{ActionNodeId, ActionTree, ClassifiableTransaction};
 use thiserror::Error;
 
-use crate::{
-    protocols::{classify_instruction, ClassifyInstructionError},
-    transaction::ClassifiableTransaction,
-    tree::{ActionNodeId, ActionTree},
-};
+use crate::instruction::{classify_instruction, ClassifyInstructionError};
 
 #[derive(Debug, Error)]
 pub enum ClassifyError {

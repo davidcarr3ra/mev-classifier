@@ -1,6 +1,5 @@
+use actions::Action;
 use indextree::{Arena, Descendants, Node, NodeEdge, NodeId};
-
-use crate::actions::Action;
 
 mod display;
 

@@ -1,0 +1,17 @@
+[package]
+edition.workspace = true
+name = "anchor-classifiers"
+version = "0.1.0"
+
+[lib]
+crate-type = ["lib"]
+name = "anchor_classifiers"
+
+[dependencies]
+anchor-lang = { workspace = true }
+solana-sdk = { workspace = true }
+
+classifier-core = { version = "0.1.0", path = "../../packages/classifier-core" }
+thiserror = "1.0.63"
+anyhow = "1.0.86"
+actions = { version = "0.1.0", path = "../../packages/actions" }

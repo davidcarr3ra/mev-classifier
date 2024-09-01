@@ -1,4 +1,5 @@
-use classification::{Action, ActionTree};
+use actions::Action;
+use classifier_core::ActionTree;
 
 pub struct PostProcessConfig {
     pub retain_votes: bool,

@@ -1,18 +1,14 @@
 mod block;
 mod dex_swap;
 mod jito_tip;
-mod native_transfer;
-mod program;
+mod solana;
 mod transaction;
-mod vote;
 
 pub use block::*;
 pub use dex_swap::*;
 pub use jito_tip::*;
-pub use native_transfer::*;
-pub use program::*;
+pub use solana::*;
 pub use transaction::*;
-pub use vote::*;
 
 use macros::define_actions;
 
@@ -34,6 +30,8 @@ define_actions! {
     //
     // Registered variants (must implement above trait and #[action] or #[action_enum])
     //
+
+    // Utility
     Transaction,
     Block,
 
@@ -41,6 +39,8 @@ define_actions! {
     ProgramInvocation,
     NativeTransfer,
     Vote,
+    SetComputeBudgetLimit,
+    SetComputeUnitPrice,
 
     // 3rd party actions
     JitoTip,

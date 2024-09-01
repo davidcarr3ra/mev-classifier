@@ -1,11 +1,11 @@
+use actions::{Action, DexSwap, JupiterV6LedgerSwapAction, JupiterV6SwapAction};
 use anchor_lang::{declare_program, AnchorDeserialize, Discriminator};
+use classifier_core::{
+    ClassifiableInstruction, ClassifiableTransaction, ClassifyInstructionResult,
+    InstructionClassifier,
+};
 use solana_sdk::pubkey::Pubkey;
 use thiserror::Error;
-
-use crate::{
-    transaction::ClassifiableInstruction, Action, ClassifiableTransaction, DexSwap,
-    JupiterV6LedgerSwapAction, JupiterV6SwapAction,
-};
 
 declare_program!(jupiter_v6);
 
@@ -20,32 +20,36 @@ pub enum JupiterV6Error {
 
 type Result<T> = std::result::Result<T, JupiterV6Error>;
 
-pub const ID: Pubkey = jupiter_v6::ID_CONST;
+pub struct JupiterV6Classifier;
 
-pub fn classify_instruction(
-    txn: &ClassifiableTransaction,
-    ix: &ClassifiableInstruction,
-) -> Result<Option<Action>> {
-    if ix.data.len() < 8 {
-        return Err(JupiterV6Error::InvalidLength);
+impl InstructionClassifier for JupiterV6Classifier {
+    const ID: Pubkey = jupiter_v6::ID_CONST;
+
+    fn classify_instruction(
+        txn: &classifier_core::ClassifiableTransaction,
+        ix: &classifier_core::ClassifiableInstruction,
+    ) -> ClassifyInstructionResult {
+        if ix.data.len() < 8 {
+            return Err(JupiterV6Error::InvalidLength.into());
+        }
+
+        let discriminator = &ix.data[..8];
+
+        let action = match discriminator {
+            jupiter_v6::internal::args::Route::DISCRIMINATOR => classify_route(txn, ix)?,
+            jupiter_v6::internal::args::SharedAccountsRoute::DISCRIMINATOR => {
+                classify_shared_accounts_route(txn, ix)?
+            }
+
+            jupiter_v6::internal::args::RouteWithTokenLedger::DISCRIMINATOR => {
+                classify_token_ledger_route(txn, ix)?
+            }
+
+            _ => return Ok(None),
+        };
+
+        Ok(Some(action))
     }
-
-    let discriminator = &ix.data[..8];
-
-    let action = match discriminator {
-        jupiter_v6::internal::args::Route::DISCRIMINATOR => classify_route(txn, ix)?,
-        jupiter_v6::internal::args::SharedAccountsRoute::DISCRIMINATOR => {
-            classify_shared_accounts_route(txn, ix)?
-        }
-
-        jupiter_v6::internal::args::RouteWithTokenLedger::DISCRIMINATOR => {
-            classify_token_ledger_route(txn, ix)?
-        }
-
-        _ => return Ok(None),
-    };
-
-    Ok(Some(action))
 }
 
 fn classify_route(_txn: &ClassifiableTransaction, ix: &ClassifiableInstruction) -> Result<Action> {

@@ -1,11 +1,11 @@
 [package]
 edition.workspace = true
-name = "classification"
+name = "classifier-core"
 version = "0.1.0"
 
 [lib]
 crate-type = ["lib"]
-name = "classification"
+name = "classifier_core"
 
 [dependencies]
 anchor-lang = { workspace = true }
@@ -13,6 +13,7 @@ solana-program = { workspace = true }
 solana-sdk = { workspace = true }
 solana-transaction-status = { workspace = true }
 
+actions = { version = "0.1.0", path = "../actions" }
 anyhow = "1.0.86"
 bincode = "1.3.3"
 bs58 = "0.5.1"

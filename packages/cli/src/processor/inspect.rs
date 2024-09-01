@@ -1,5 +1,7 @@
+use actions::Block;
 use clap::Args;
-use classification::{classify_transaction, ActionTree, Block, ClassifiableTransaction};
+use classifier_core::{ActionTree, ClassifiableTransaction};
+use classifier_handler::classify_transaction;
 use inspection::filtering::{post_process, PostProcessConfig};
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcBlockConfig};
 use solana_transaction_status::{TransactionDetails, UiTransactionEncoding};
@@ -71,7 +73,7 @@ pub fn entry(args: InspectArgs) {
             }
         }
 
-        let tx_action = classification::Transaction::new(signature);
+        let tx_action = actions::Transaction::new(signature);
         let tx_id = tree.insert(block_id, tx_action.into());
 
         let c_txn = ClassifiableTransaction::new(v_txn, txn.meta.unwrap());

@@ -21,9 +21,3 @@ impl Transaction {
         Self { signature }
     }
 }
-
-// impl From<Transaction> for Action {
-//     fn from(action: Transaction) -> Self {
-//         Action::Transaction(action)
-//     }
-// }

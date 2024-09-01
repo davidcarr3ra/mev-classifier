@@ -1,0 +1,16 @@
+[package]
+edition.workspace = true
+name = "classifier-handler"
+version = "0.1.0"
+
+[lib]
+crate-type = ["lib"]
+name = "classifier_handler"
+
+[dependencies]
+actions = { version = "0.1.0", path = "../../packages/actions" }
+anchor-classifiers = { version = "0.1.0", path = "../anchor-classifiers" }
+anyhow = "1.0.86"
+classifier-core = { version = "0.1.0", path = "../../packages/classifier-core" }
+solana-classifier = { version = "0.1.0", path = "../solana-classifier" }
+thiserror = "1.0.63"

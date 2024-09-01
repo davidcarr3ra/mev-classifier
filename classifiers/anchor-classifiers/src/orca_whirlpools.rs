@@ -1,13 +1,11 @@
+use actions::{Action, DexSwap, WhirlpoolsSwapAction};
 use anchor_lang::{declare_program, AnchorDeserialize, Discriminator};
+use classifier_core::{
+    ClassifiableInstruction, ClassifiableTransaction, ClassifyInstructionResult,
+    InstructionClassifier,
+};
 use solana_sdk::pubkey::Pubkey;
 use thiserror::Error;
-
-use crate::{
-    transaction::ClassifiableInstruction, Action, ClassifiableTransaction, DexSwap,
-    WhirlpoolsSwapAction,
-};
-
-pub const ID: Pubkey = solana_sdk::pubkey!("whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc");
 
 declare_program!(whirlpools);
 
@@ -25,23 +23,29 @@ pub enum ClassifyWhirlpoolError {
 
 type Result<T> = std::result::Result<T, ClassifyWhirlpoolError>;
 
-pub fn classify_instruction(
-    txn: &ClassifiableTransaction,
-    ix: &ClassifiableInstruction,
-) -> Result<Option<Action>> {
-    if ix.data.len() < 8 {
-        return Err(ClassifyWhirlpoolError::InvalidLength);
+pub struct OrcaWhirlpoolsClassifier;
+
+impl InstructionClassifier for OrcaWhirlpoolsClassifier {
+    const ID: Pubkey = whirlpools::ID_CONST;
+
+    fn classify_instruction(
+        txn: &ClassifiableTransaction,
+        ix: &ClassifiableInstruction,
+    ) -> ClassifyInstructionResult {
+        if ix.data.len() < 8 {
+            return Err(ClassifyWhirlpoolError::InvalidLength.into());
+        }
+
+        let discriminator = &ix.data[..8];
+
+        let action = match discriminator {
+            whirlpools::internal::args::Swap::DISCRIMINATOR => classify_swap(txn, ix)?,
+            whirlpools::internal::args::SwapV2::DISCRIMINATOR => classify_swap_v2(txn, ix)?,
+            _ => return Ok(None),
+        };
+
+        Ok(Some(action))
     }
-
-    let discriminator = &ix.data[..8];
-
-    let action = match discriminator {
-        whirlpools::internal::args::Swap::DISCRIMINATOR => classify_swap(txn, ix)?,
-        whirlpools::internal::args::SwapV2::DISCRIMINATOR => classify_swap_v2(txn, ix)?,
-        _ => return Ok(None),
-    };
-
-    Ok(Some(action))
 }
 
 fn classify_swap(txn: &ClassifiableTransaction, ix: &ClassifiableInstruction) -> Result<Action> {

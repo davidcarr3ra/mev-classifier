@@ -1,15 +1,36 @@
+use actions::{Action, CompactUpdateVoteState, Vote};
+use classifier_core::{
+    ClassifiableInstruction, ClassifiableTransaction, ClassifyInstructionResult,
+    InstructionClassifier,
+};
 use solana_sdk::{
     pubkey::Pubkey,
     vote::{instruction::VoteInstruction, state::VoteStateUpdate},
 };
 use thiserror::Error;
 
-use crate::{
-    transaction::ClassifiableInstruction, Action, ClassifiableTransaction, CompactUpdateVoteState,
-    Vote,
-};
+pub struct VoteClassifier;
 
-pub const ID: Pubkey = solana_sdk::vote::program::ID;
+impl InstructionClassifier for VoteClassifier {
+    const ID: Pubkey = solana_sdk::vote::program::ID;
+
+    fn classify_instruction(
+        txn: &ClassifiableTransaction,
+        ix: &ClassifiableInstruction,
+    ) -> ClassifyInstructionResult {
+        let decoded: VoteInstruction = bincode::deserialize(&ix.data)?;
+
+        let action = match decoded {
+            VoteInstruction::CompactUpdateVoteState(update) => {
+                Some(classify_compact_update_vote_state(txn, ix, update)?)
+            }
+
+            _ => return Ok(None),
+        };
+
+        Ok(action)
+    }
+}
 
 #[derive(Debug, Error)]
 pub enum ClassifyVoteError {
@@ -21,23 +42,6 @@ pub enum ClassifyVoteError {
 }
 
 type Result<T> = std::result::Result<T, ClassifyVoteError>;
-
-pub fn classify_instruction(
-    txn: &ClassifiableTransaction,
-    ixn: &ClassifiableInstruction,
-) -> Result<Option<Action>> {
-    let instruction: VoteInstruction = bincode::deserialize(&ixn.data)?;
-
-    let action = match instruction {
-        VoteInstruction::CompactUpdateVoteState(update) => {
-            classify_compact_update_vote_state(txn, ixn, update)?
-        }
-
-        _ => return Ok(None),
-    };
-
-    Ok(Some(action))
-}
 
 fn classify_compact_update_vote_state(
     txn: &ClassifiableTransaction,

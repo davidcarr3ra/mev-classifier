@@ -1,13 +1,9 @@
-use thiserror::Error;
-
-use crate::{
-    actions::ActionTrait, ActionNodeId, ActionTree, ClassifiableTransaction, ProgramInvocation,
+use actions::{ActionTrait, ProgramInvocation};
+use classifier_core::{
+    ActionNodeId, ActionTree, ClassifiableInstruction, ClassifiableTransaction,
+    InstructionClassifier,
 };
-
-mod jupiter_v6;
-mod orca_whirlpools;
-mod system_program;
-mod vote_program;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum ClassifyInstructionError {
@@ -23,25 +19,32 @@ pub enum ClassifyInstructionError {
 
 type Result<T> = std::result::Result<T, ClassifyInstructionError>;
 
+/// Utility macro to match instruction to its correct classifier
 macro_rules! classify_instruction_matcher {
-    ($program_id:expr, $txn:expr, $ix:expr, $($mod:ident),* $(,)?) => {
+    ($program_id:expr, $txn:expr, $ix:expr, $($classifier:ty),* $(,)?) => {
         match $program_id {
             $(
-                $mod::ID => $mod::classify_instruction($txn, $ix)
-                    .map_err(|err| ClassifyInstructionError::ClassificationError(err.into())),
+                <$classifier>::ID => <$classifier>::classify_instruction($txn, $ix)
+                    .map_err(|err| {
+                        let classifier = stringify!($mod);
+                        ClassifyInstructionError::ClassificationError(Into::<anyhow::Error>::into(err)
+                            .context(format!("Classifier: {}", classifier)))
+                    }),
             )*
             _ => Err(ClassifyInstructionError::UnknownProgramId),
         }
     };
 }
 
+/// Classifies an instruction, recursing into its inner instructions if
+/// necessary.
 pub fn classify_instruction(
     txn: &ClassifiableTransaction,
     mut index: usize,
     tree: &mut ActionTree,
     parent: ActionNodeId,
 ) -> Result<usize> {
-    let ix: &crate::transaction::ClassifiableInstruction = &txn.instructions[index];
+    let ix: &ClassifiableInstruction = &txn.instructions[index];
     let mut indexes_used = 1;
 
     let program_id = txn
@@ -55,10 +58,14 @@ pub fn classify_instruction(
         //
         // Register all classifier modules here
         //
-        system_program,
-        vote_program,
-        orca_whirlpools,
-        jupiter_v6
+
+        // Solana classifiers
+        solana_classifier::ComputeBudgetClassifier,
+        solana_classifier::VoteClassifier,
+        solana_classifier::SystemProgramClassifier,
+        // Third party classifiers
+        anchor_classifiers::JupiterV6Classifier,
+        anchor_classifiers::OrcaWhirlpoolsClassifier,
     );
 
     let action = match action_result {

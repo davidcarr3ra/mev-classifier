@@ -1,13 +1,10 @@
+use actions::{is_jito_tip_address, Action, JitoTip, NativeTransfer};
+use classifier_core::{
+    ClassifiableInstruction, ClassifiableTransaction, ClassifyInstructionResult,
+    InstructionClassifier,
+};
 use solana_sdk::{pubkey::Pubkey, system_instruction::SystemInstruction};
 use thiserror::Error;
-
-use crate::{
-    actions::{is_jito_tip_address, JitoTip, NativeTransfer},
-    transaction::ClassifiableInstruction,
-    Action, ClassifiableTransaction,
-};
-
-pub const ID: Pubkey = solana_sdk::system_program::ID;
 
 #[derive(Error, Debug)]
 pub enum ClassifySystemInstructionError {
@@ -23,24 +20,26 @@ pub enum ClassifySystemInstructionError {
 
 type Result<T> = std::result::Result<T, ClassifySystemInstructionError>;
 
-pub fn classify_instruction(
-    txn: &ClassifiableTransaction,
-    ix: &ClassifiableInstruction,
-) -> Result<Option<Action>> {
-    let parsed_ix: SystemInstruction = match bincode::deserialize(&ix.data) {
-        Ok(ix) => ix,
-        Err(err) => {
-            return Err(ClassifySystemInstructionError::DeserializeError(err));
-        }
-    };
+pub struct SystemProgramClassifier;
 
-    let action = match parsed_ix {
-        SystemInstruction::Transfer { lamports } => classify_transfer(lamports, txn, ix)?,
+impl InstructionClassifier for SystemProgramClassifier {
+    const ID: Pubkey = solana_sdk::system_program::ID;
 
-        _ => return Ok(None),
-    };
+    fn classify_instruction(
+        txn: &ClassifiableTransaction,
+        ix: &ClassifiableInstruction,
+    ) -> ClassifyInstructionResult {
+        let parsed_ix: SystemInstruction = bincode::deserialize(&ix.data)
+            .map_err(ClassifySystemInstructionError::DeserializeError)?;
 
-    Ok(Some(action))
+        let action = match parsed_ix {
+            SystemInstruction::Transfer { lamports } => classify_transfer(lamports, txn, ix)?,
+
+            _ => return Ok(None),
+        };
+
+        Ok(Some(action))
+    }
 }
 
 /// # Account references

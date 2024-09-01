@@ -2,6 +2,19 @@ use crate::ActionTrait;
 use macros::action;
 use solana_sdk::pubkey::Pubkey;
 
+/// General catch-all action for invoking any program.
+/// Used when no specific classifier is available for a program.
+#[action]
+pub struct ProgramInvocation {
+    pub program_id: Pubkey,
+}
+
+impl ActionTrait for ProgramInvocation {
+    fn recurse_during_classify(&self) -> bool {
+        true
+    }
+}
+
 #[action]
 pub struct NativeTransfer {
     pub from: Pubkey,

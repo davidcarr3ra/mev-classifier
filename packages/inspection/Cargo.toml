@@ -8,8 +8,9 @@ crate-type = ["lib"]
 name = "inspection"
 
 [dependencies]
+actions = { version = "0.1.0", path = "../actions" }
 base58 = "0.2.0"
-classification = { version = "0.1.0", path = "../classification" }
+classifier-core = { version = "0.1.0", path = "../classifier-core" }
 solana-sdk = { workspace = true }
 solana-transaction-status = { workspace = true }
 spl-token = { workspace = true }

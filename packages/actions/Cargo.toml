@@ -1,0 +1,13 @@
+[package]
+edition.workspace = true
+name = "actions"
+version = "0.1.0"
+
+[lib]
+crate-type = ["lib"]
+name = "actions"
+
+[dependencies]
+solana-sdk = { workspace = true }
+
+macros = { version = "0.1.0", path = "../macros" }
