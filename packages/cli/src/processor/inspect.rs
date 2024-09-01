@@ -7,6 +7,7 @@ use solana_client::{rpc_client::RpcClient, rpc_config::RpcBlockConfig};
 use solana_transaction_status::{TransactionDetails, UiTransactionEncoding};
 use std::fs::{self, File};
 use std::io::Write;
+use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Args, Debug)]
@@ -118,12 +119,16 @@ pub fn entry(args: InspectArgs) {
         let timestamp = since_the_epoch.as_secs();
 
         // Create the file path
-        let file_path = format!("results/{}_results.txt", timestamp);
+        let file_path = format!("target/tree_results/{}_results.txt", timestamp);
+        let file_path = Path::new(&file_path);
+
+        // Create the directory if it doesn't exist
+        fs::create_dir_all(file_path.parent().unwrap()).expect("Failed to create directory");
 
         // Write the tree to the file
         let mut file = File::create(&file_path).expect("Failed to create file");
         write!(file, "{}", tree).expect("Failed to write to file");
 
-        println!("Results written to {}", file_path);
+        println!("Results written to {}", file_path.display());
     }
 }
