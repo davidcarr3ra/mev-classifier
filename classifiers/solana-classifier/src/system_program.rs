@@ -1,8 +1,6 @@
 use actions::{is_jito_tip_address, Action, JitoTip, NativeTransfer};
-use classifier_core::{
-    ClassifiableInstruction, ClassifiableTransaction, ClassifyInstructionResult,
-    InstructionClassifier,
-};
+use classifier_core::{ClassifiableInstruction, ClassifiableTransaction};
+use classifier_trait::{ClassifyInstructionResult, InstructionClassifier};
 use solana_sdk::{pubkey::Pubkey, system_instruction::SystemInstruction};
 use thiserror::Error;
 

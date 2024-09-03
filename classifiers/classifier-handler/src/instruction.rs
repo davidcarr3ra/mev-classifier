@@ -1,8 +1,7 @@
+use action_tree::{ActionNodeId, ActionTree};
 use actions::{ActionTrait, ProgramInvocation};
-use classifier_core::{
-    ActionNodeId, ActionTree, ClassifiableInstruction, ClassifiableTransaction,
-    InstructionClassifier,
-};
+use classifier_core::{ClassifiableInstruction, ClassifiableTransaction};
+use classifier_trait::InstructionClassifier;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -64,8 +63,8 @@ pub fn classify_instruction(
         solana_classifier::VoteClassifier,
         solana_classifier::SystemProgramClassifier,
         // Third party classifiers
-        anchor_classifiers::JupiterV6Classifier,
-        anchor_classifiers::OrcaWhirlpoolsClassifier,
+        anchor_classifiers::WhirlpoolsClassifier,
+        // anchor_classifiers::JupiterV6Classifier,
     );
 
     let action = match action_result {

@@ -1,4 +1,5 @@
-use classifier_core::{ActionNodeId, ActionTree, ClassifiableTransaction};
+use action_tree::{ActionNodeId, ActionTree};
+use classifier_core::ClassifiableTransaction;
 use thiserror::Error;
 
 use crate::instruction::{classify_instruction, ClassifyInstructionError};

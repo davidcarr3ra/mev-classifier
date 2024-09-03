@@ -1,6 +1,7 @@
+use action_tree::ActionTree;
 use actions::Block;
 use clap::Args;
-use classifier_core::{ActionTree, ClassifiableTransaction};
+use classifier_core::ClassifiableTransaction;
 use classifier_handler::classify_transaction;
 use inspection::filtering::{post_process, PostProcessConfig};
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcBlockConfig};

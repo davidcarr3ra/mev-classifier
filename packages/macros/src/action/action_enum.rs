@@ -59,7 +59,7 @@ pub fn parse_define_action_enum(input: ActionEnumInput) -> TokenStream {
 
     // Generate match arms for each trait method dynamically
     let method_impls = trait_methods.iter().filter_map(|item| {
-        if let syn::TraitItem::Fn(method) = item {
+        if let syn::TraitItem::Method(method) = item {
             let method_name = &method.sig.ident;
             let match_arms = variants.iter().map(|variant| {
                 quote! {

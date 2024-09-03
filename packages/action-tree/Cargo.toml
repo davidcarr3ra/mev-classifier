@@ -1,0 +1,12 @@
+[package]
+edition.workspace = true
+name = "action-tree"
+version = "0.1.0"
+
+[lib]
+crate-type = ["lib"]
+name = "action_tree"
+
+[dependencies]
+actions = { version = "0.1.0", path = "../actions" }
+indextree = "4.7.2"

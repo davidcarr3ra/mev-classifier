@@ -1,85 +1,64 @@
-use actions::{Action, DexSwap, WhirlpoolsSwapAction};
-use anchor_lang::{declare_program, AnchorDeserialize, Discriminator};
-use classifier_core::{
-    ClassifiableInstruction, ClassifiableTransaction, ClassifyInstructionResult,
-    InstructionClassifier,
-};
-use solana_sdk::pubkey::Pubkey;
-use thiserror::Error;
+use macros::declare_anchor_classifier;
 
-declare_program!(whirlpools);
+declare_anchor_classifier!(whirlpools, Swap, SwapV2);
 
-#[derive(Debug, Error)]
-pub enum ClassifyWhirlpoolError {
-    #[error("Invalid instruction data length")]
-    InvalidLength,
+// pub struct OrcaWhirlpoolsClassifier;
 
-    #[error("Failed to deserialize whirlpool instruction")]
-    DeserializationError,
+// impl InstructionClassifier for OrcaWhirlpoolsClassifier {
+//     const ID: Pubkey = whirlpools::ID_CONST;
 
-    #[error("Missing accounts")]
-    MissingAccounts,
-}
+//     fn classify_instruction(
+//         txn: &ClassifiableTransaction,
+//         ix: &ClassifiableInstruction,
+//     ) -> ClassifyInstructionResult {
+//         if ix.data.len() < 8 {
+//             return Err(ClassifyWhirlpoolError::InvalidLength.into());
+//         }
 
-type Result<T> = std::result::Result<T, ClassifyWhirlpoolError>;
+//         let discriminator = &ix.data[..8];
 
-pub struct OrcaWhirlpoolsClassifier;
+//         let action = match discriminator {
+//             whirlpools::internal::args::Swap::DISCRIMINATOR => classify_swap(txn, ix)?,
+//             whirlpools::internal::args::SwapV2::DISCRIMINATOR => classify_swap_v2(txn, ix)?,
+//             _ => return Ok(None),
+//         };
 
-impl InstructionClassifier for OrcaWhirlpoolsClassifier {
-    const ID: Pubkey = whirlpools::ID_CONST;
+//         Ok(Some(action))
+//     }
+// }
 
-    fn classify_instruction(
-        txn: &ClassifiableTransaction,
-        ix: &ClassifiableInstruction,
-    ) -> ClassifyInstructionResult {
-        if ix.data.len() < 8 {
-            return Err(ClassifyWhirlpoolError::InvalidLength.into());
-        }
+// fn classify_swap(txn: &ClassifiableTransaction, ix: &ClassifiableInstruction) -> Result<Action> {
+//     let mut data = &ix.data[8..];
 
-        let discriminator = &ix.data[..8];
+//     let args = whirlpools::internal::args::Swap::deserialize(&mut data)
+//         .map_err(|_| ClassifyWhirlpoolError::DeserializationError)?;
 
-        let action = match discriminator {
-            whirlpools::internal::args::Swap::DISCRIMINATOR => classify_swap(txn, ix)?,
-            whirlpools::internal::args::SwapV2::DISCRIMINATOR => classify_swap_v2(txn, ix)?,
-            _ => return Ok(None),
-        };
+//     let whirlpool = txn
+//         .get_pubkey(ix.accounts[2])
+//         .ok_or_else(|| ClassifyWhirlpoolError::MissingAccounts)?;
 
-        Ok(Some(action))
-    }
-}
+//     let action = WhirlpoolsSwapAction {
+//         pool: whirlpool,
+//         amount: args.amount,
+//     };
 
-fn classify_swap(txn: &ClassifiableTransaction, ix: &ClassifiableInstruction) -> Result<Action> {
-    let mut data = &ix.data[8..];
+//     Ok(Action::DexSwap(DexSwap::Whirlpools(action)))
+// }
 
-    let args = whirlpools::internal::args::Swap::deserialize(&mut data)
-        .map_err(|_| ClassifyWhirlpoolError::DeserializationError)?;
+// fn classify_swap_v2(txn: &ClassifiableTransaction, ix: &ClassifiableInstruction) -> Result<Action> {
+//     let mut data = &ix.data[8..];
 
-    let whirlpool = txn
-        .get_pubkey(ix.accounts[2])
-        .ok_or_else(|| ClassifyWhirlpoolError::MissingAccounts)?;
+//     let args = whirlpools::internal::args::SwapV2::deserialize(&mut data)
+//         .map_err(|_| ClassifyWhirlpoolError::DeserializationError)?;
 
-    let action = WhirlpoolsSwapAction {
-        pool: whirlpool,
-        amount: args.amount,
-    };
+//     let whirlpool = txn
+//         .get_pubkey(ix.accounts[2])
+//         .ok_or_else(|| ClassifyWhirlpoolError::MissingAccounts)?;
 
-    Ok(Action::DexSwap(DexSwap::Whirlpools(action)))
-}
+//     let action = WhirlpoolsSwapAction {
+//         pool: whirlpool,
+//         amount: args.amount,
+//     };
 
-fn classify_swap_v2(txn: &ClassifiableTransaction, ix: &ClassifiableInstruction) -> Result<Action> {
-    let mut data = &ix.data[8..];
-
-    let args = whirlpools::internal::args::SwapV2::deserialize(&mut data)
-        .map_err(|_| ClassifyWhirlpoolError::DeserializationError)?;
-
-    let whirlpool = txn
-        .get_pubkey(ix.accounts[2])
-        .ok_or_else(|| ClassifyWhirlpoolError::MissingAccounts)?;
-
-    let action = WhirlpoolsSwapAction {
-        pool: whirlpool,
-        amount: args.amount,
-    };
-
-    Ok(Action::DexSwap(DexSwap::Whirlpools(action)))
-}
+//     Ok(Action::DexSwap(DexSwap::Whirlpools(action)))
+// }

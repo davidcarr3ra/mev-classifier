@@ -1,9 +1,7 @@
 use actions::{Action, SetComputeBudgetLimit, SetComputeUnitPrice};
 use borsh::BorshDeserialize;
-use classifier_core::{
-    ClassifiableInstruction, ClassifiableTransaction, ClassifyInstructionResult,
-    InstructionClassifier,
-};
+use classifier_core::{ClassifiableInstruction, ClassifiableTransaction};
+use classifier_trait::{ClassifyInstructionResult, InstructionClassifier};
 use solana_sdk::{compute_budget::ComputeBudgetInstruction, pubkey::Pubkey};
 use thiserror::Error;
 

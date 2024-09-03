@@ -1,5 +1,5 @@
 use actions::{Action, JitoBundle};
-use classifier_core::{ActionNodeId, ActionTree};
+use action_tree::{ActionNodeId, ActionTree};
 use solana_sdk::signature::Signature;
 use std::str::FromStr;
 

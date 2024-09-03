@@ -1,8 +1,6 @@
 use actions::{Action, CompactUpdateVoteState, Vote};
-use classifier_core::{
-    ClassifiableInstruction, ClassifiableTransaction, ClassifyInstructionResult,
-    InstructionClassifier,
-};
+use classifier_core::{ClassifiableInstruction, ClassifiableTransaction};
+use classifier_trait::{ClassifyInstructionResult, InstructionClassifier};
 use solana_sdk::{
     pubkey::Pubkey,
     vote::{instruction::VoteInstruction, state::VoteStateUpdate},

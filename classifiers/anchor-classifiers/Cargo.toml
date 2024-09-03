@@ -11,7 +11,10 @@ name = "anchor_classifiers"
 anchor-lang = { workspace = true }
 solana-sdk = { workspace = true }
 
-classifier-core = { version = "0.1.0", path = "../../packages/classifier-core" }
-thiserror = "1.0.63"
-anyhow = "1.0.86"
 actions = { version = "0.1.0", path = "../../packages/actions" }
+anyhow = "1.0.86"
+borsh = "^0.10.3"
+macros = { version = "0.1.0", path = "../../packages/macros" }
+thiserror = "1.0.63"
+classifier-core = { version = "0.1.0", path = "../../packages/classifier-core" }
+classifier-trait = { version = "0.1.0", path = "../classifier-trait" }

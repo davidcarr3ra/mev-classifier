@@ -1,7 +1,6 @@
 use actions::Action;
+use classifier_core::{ClassifiableInstruction, ClassifiableTransaction};
 use solana_sdk::pubkey::Pubkey;
-
-use crate::{ClassifiableInstruction, ClassifiableTransaction};
 
 pub type ClassifyInstructionError = anyhow::Error;
 pub type ClassifyInstructionResult = Result<Option<Action>, ClassifyInstructionError>;
