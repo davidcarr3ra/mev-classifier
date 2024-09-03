@@ -1,5 +1,5 @@
-pub mod jupiter_v6;
-pub mod orca_whirlpools;
+use anchor_lang::{prelude::*, Discriminator};
+use macros::declare_anchor_classifier;
 
-pub use jupiter_v6::*;
-pub use orca_whirlpools::*;
+declare_anchor_classifier!(whirlpools, Swap, SwapV2);
+declare_anchor_classifier!(jupiter_v6, Route);

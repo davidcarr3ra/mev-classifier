@@ -43,8 +43,6 @@ pub fn gen_anchor_classifier(input: AnchorClassifierInput) -> TokenStream {
     let classifier_impl = gen_classifier_impl(&input);
 
     quote! {
-        use anchor_lang::{AnchorDeserialize, Discriminator, prelude::*};
-
         pub struct #classifier_name;
 
         #errors

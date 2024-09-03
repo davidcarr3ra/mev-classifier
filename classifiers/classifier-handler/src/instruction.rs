@@ -64,7 +64,7 @@ pub fn classify_instruction(
         solana_classifier::SystemProgramClassifier,
         // Third party classifiers
         anchor_classifiers::WhirlpoolsClassifier,
-        // anchor_classifiers::JupiterV6Classifier,
+        anchor_classifiers::JupiterV6Classifier,
     );
 
     let action = match action_result {
