@@ -65,6 +65,7 @@ pub fn classify_instruction(
         // Third party classifiers
         anchor_classifiers::WhirlpoolsClassifier,
         anchor_classifiers::JupiterV6Classifier,
+        anchor_classifiers::MeteoraDlmmClassifier,
     );
 
     let action = match action_result {

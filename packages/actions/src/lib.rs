@@ -47,4 +47,5 @@ define_actions! {
     JitoBundle,
     WhirlpoolsAction,
     JupiterV6Action,
+    MeteoraDlmmAction,
 }
