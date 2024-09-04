@@ -284,7 +284,13 @@ pub fn convert_idl_type_def_to_ts(
         }
         IdlTypeDefTy::Type { alias } => {
             let alias = convert_idl_type_to_syn_type(alias);
-            quote! { pub type #name = #alias; }
+            let ty = quote! { pub type #name = #alias; };
+
+            // TODO: Figure out effects of this
+            return quote! {
+                #repr
+                #ty
+            };
         }
     };
 

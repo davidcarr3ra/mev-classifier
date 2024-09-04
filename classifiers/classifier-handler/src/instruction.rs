@@ -66,10 +66,12 @@ pub fn classify_instruction(
         anchor_classifiers::WhirlpoolsClassifier,
         anchor_classifiers::JupiterV6Classifier,
         anchor_classifiers::MeteoraDlmmClassifier,
+        anchor_classifiers::RaydiumClmmClassifier,
     );
 
     let action = match action_result {
-        Ok(action) => action,
+        Ok(Some(action)) => Some(action),
+        Ok(None) => Some(ProgramInvocation { program_id }.into()),
 
         // Still want to classify unknown programs
         Err(ClassifyInstructionError::UnknownProgramId) => {

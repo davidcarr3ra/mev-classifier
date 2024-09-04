@@ -48,4 +48,5 @@ define_actions! {
     WhirlpoolsAction,
     JupiterV6Action,
     MeteoraDlmmAction,
+    RaydiumClmmAction,
 }
