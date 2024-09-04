@@ -4,7 +4,7 @@ use syn::{ItemEnum, ItemStruct};
 
 pub fn get_action_derivations() -> TokenStream {
     quote! {
-        #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+        #[derive(Debug, Clone, PartialEq, Eq)]
     }
 }
 

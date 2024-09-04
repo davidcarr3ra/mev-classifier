@@ -84,7 +84,7 @@ pub fn classify_instruction(
 
     let (recurse, child) = if let Some(action) = action {
         let recurse = action.recurse_during_classify();
-        let child = tree.insert(parent, action);
+        let child = tree.insert_child(parent, action);
         (recurse, Some(child))
     } else {
         (false, None)

@@ -1,5 +1,5 @@
-use actions::{Action, JitoBundle};
 use action_tree::{ActionNodeId, ActionTree};
+use actions::{Action, JitoBundle};
 use solana_sdk::signature::Signature;
 use std::str::FromStr;
 
@@ -12,7 +12,10 @@ pub struct PostProcessConfig {
 }
 
 pub fn post_process(config: PostProcessConfig, tree: &mut ActionTree) {
+    // TODO: This currently assumes root is block node. This may not always be the case
+    // if we are buffering past blocks for multi-block MEV inspection
     let root = tree.root();
+
     let mut remove_list = Vec::with_capacity(tree.num_children(root));
     let mut transaction_list = Vec::with_capacity(tree.num_children(root));
 
@@ -59,31 +62,39 @@ pub fn post_process(config: PostProcessConfig, tree: &mut ActionTree) {
         }
     }
 
-    if config.cluster_jito_bundles {
-        if let Err(e) = process_jito_bundles(tree) {
-            eprintln!("Error processing Jito bundles: {}", e);
-        }
-    }
+    // TODO: This is removed because we have not configued the jito
+    // bundle scraper for historical data yet. This will likely require some
+    // pre-indexing of their bundle history as a separate process.
+    // if config.cluster_jito_bundles {
+    //     if let Err(e) = process_jito_bundles(root, tree) {
+    //         eprintln!("Error processing Jito bundles: {}", e);
+    //     }
+    // }
 }
 
-fn process_jito_bundles(tree: &mut ActionTree) -> Result<(), Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn process_jito_bundles(
+    block_id: ActionNodeId,
+    tree: &mut ActionTree,
+) -> Result<(), Box<dyn std::error::Error>> {
     let bundles = fetch_jito_bundles()?;
 
     for bundle in bundles {
-        let bundle_node = tree.insert(
-            tree.root(),
-            Action::JitoBundle(JitoBundle {
-                bundle_id: bundle.bundle_id,
-                timestamp: bundle.timestamp,
-                tippers: bundle.tippers,
-                landed_tip_lamports: bundle.landed_tip_lamports,
-            }),
-        );
+        let bundle_node = JitoBundle {
+            bundle_id: bundle.bundle_id,
+            timestamp: bundle.timestamp,
+            tippers: bundle.tippers,
+            landed_tip_lamports: bundle.landed_tip_lamports,
+        };
 
-        for tx_hash in bundle.transactions.iter() {
-            if let Some(tx_node) = find_transaction_node(tree, tx_hash) {
-                tree.move_node(tx_node, bundle_node);
-            }
+        let tx_ids = bundle
+            .transactions
+            .iter()
+            .filter_map(|tx_hash| find_transaction_node(tree, tx_hash))
+            .collect::<Vec<_>>();
+
+        if !tx_ids.is_empty() {
+            tree.insert_parent_for_children(block_id, tx_ids, bundle_node.into());
         }
     }
 
@@ -111,19 +122,3 @@ fn search(tree: &ActionTree, node: ActionNodeId, tx_hash: &str) -> Option<Action
 fn find_transaction_node(tree: &ActionTree, tx_hash: &str) -> Option<ActionNodeId> {
     search(tree, tree.root(), tx_hash)
 }
-
-// fn find_transaction_node(tree: &ActionTree, tx_hash: &str) -> Option<NodeId> {
-//     let signature = Signature::from_str(tx_hash).ok()?;
-
-//     tree.iter().find_map(|(node_id, action)| {
-//         if let Action::Transaction(tx) = action {
-//             if tx.signature == signature {
-//                 Some(node_id)
-//             } else {
-//                 None
-//             }
-//         } else {
-//             None
-//         }
-//     })
-// }

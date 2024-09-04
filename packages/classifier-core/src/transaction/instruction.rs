@@ -16,7 +16,7 @@ pub enum ClassifiableInstructionError {
 
 type Result<T> = std::result::Result<T, ClassifiableInstructionError>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ClassifiableInstruction {
     pub program_id_index: u8,
     pub accounts: Vec<u8>,

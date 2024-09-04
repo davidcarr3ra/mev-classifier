@@ -4,6 +4,7 @@ use clap::Args;
 use classifier_core::ClassifiableTransaction;
 use classifier_handler::classify_transaction;
 use inspection::filtering::{post_process, PostProcessConfig};
+use inspection::label_tree;
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcBlockConfig};
 use solana_transaction_status::{TransactionDetails, UiTransactionEncoding};
 use std::fs::{self, File};
@@ -83,10 +84,8 @@ pub fn entry(args: InspectArgs) {
             }
         }
 
-        let tx_action = actions::Transaction::new(signature);
-        let tx_id = tree.insert(block_id, tx_action.into());
-
         let c_txn = ClassifiableTransaction::new(v_txn, txn.meta.unwrap());
+        let tx_id = tree.insert_child(block_id, c_txn.clone().into());
 
         match classify_transaction(c_txn, &mut tree, tx_id) {
             Ok(_) => {}
@@ -98,6 +97,8 @@ pub fn entry(args: InspectArgs) {
             }
         }
     }
+
+    label_tree(&mut tree);
 
     post_process(
         PostProcessConfig {

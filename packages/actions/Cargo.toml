@@ -10,6 +10,7 @@ name = "actions"
 [dependencies]
 anchor-lang = { workspace = true }
 solana-sdk = { workspace = true }
+solana-transaction-status = { workspace = true }
 
 borsh = "^0.10.3"
 macros = { version = "0.1.0", path = "../macros" }

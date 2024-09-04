@@ -1,15 +1,18 @@
 mod block;
 mod jito;
+mod post_processing;
 mod protocols;
 mod solana;
 mod transaction;
 
 pub use block::*;
 pub use jito::*;
+pub use post_processing::*;
 pub use protocols::*;
 pub use solana::*;
 pub use transaction::*;
 
+use classifier_core::ClassifiableTransaction;
 use macros::define_actions;
 
 define_actions! {
@@ -32,6 +35,7 @@ define_actions! {
     //
 
     // Utility
+    ClassifiableTransaction,
     Transaction,
     Block,
 
@@ -44,9 +48,11 @@ define_actions! {
 
     // 3rd party actions
     JitoTip,
-    JitoBundle,
     WhirlpoolsAction,
     JupiterV6Action,
     MeteoraDlmmAction,
     RaydiumClmmAction,
+    // Post processing actions
+    JitoBundle,
+    DexSwap,
 }

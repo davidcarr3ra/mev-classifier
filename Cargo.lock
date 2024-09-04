@@ -18,6 +18,7 @@ version = "0.1.0"
 dependencies = [
  "actions",
  "indextree 4.7.2",
+ "thiserror",
 ]
 
 [[package]]
@@ -31,6 +32,7 @@ dependencies = [
  "macros",
  "serde",
  "solana-sdk",
+ "solana-transaction-status",
 ]
 
 [[package]]
@@ -2184,10 +2186,6 @@ dependencies = [
  "portable-atomic",
  "unicode-width",
 ]
-
-[[package]]
-name = "ingestion"
-version = "0.1.0"
 
 [[package]]
 name = "inspection"
