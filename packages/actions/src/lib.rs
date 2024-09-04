@@ -55,4 +55,5 @@ define_actions! {
     // Post processing actions
     JitoBundle,
     DexSwap,
+    AtomicArbitrage,
 }

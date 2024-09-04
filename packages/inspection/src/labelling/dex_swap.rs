@@ -1,8 +1,7 @@
-use action_tree::ActionTree;
+use action_tree::{ActionNodeId, ActionTree};
 use actions::{Action, DexSwap};
 
-pub fn classify_dex_swaps(tree: &mut ActionTree) {
-    let root = tree.root();
+pub fn classify_dex_swaps(root: ActionNodeId, tree: &mut ActionTree) {
     let mut parent_txn = None;
 
     let mut insertions = Vec::new();

@@ -8,6 +8,9 @@ use crate::{Action, ActionTrait};
 pub struct DexSwap {
     pub input_mint: Pubkey,
     pub output_mint: Pubkey,
+
+    pub input_token_account: Pubkey,
+    pub output_token_account: Pubkey,
 }
 
 impl DexSwap {

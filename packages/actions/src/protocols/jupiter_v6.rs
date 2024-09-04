@@ -40,6 +40,8 @@ impl jupiter_v6_actions::Route {
         Ok(DexSwap {
             input_mint,
             output_mint,
+            input_token_account: self.user_source_token_account,
+            output_token_account: self.user_destination_token_account,
         })
     }
 }
