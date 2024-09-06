@@ -30,6 +30,10 @@ impl ActionTree {
         self.arena.get(node_id)
     }
 
+    pub fn get_mut(&mut self, node_id: ActionNodeId) -> Option<&mut ActionNode> {
+        self.arena.get_mut(node_id)
+    }
+
     pub fn insert_child(&mut self, parent: ActionNodeId, action: Action) -> ActionNodeId {
         let child_id = parent.append_value(action, &mut self.arena);
         child_id

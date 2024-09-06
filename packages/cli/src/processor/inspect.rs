@@ -1,8 +1,5 @@
-use action_tree::ActionTree;
-use actions::Block;
 use clap::Args;
-use classifier_core::ClassifiableTransaction;
-use classifier_handler::classify_transaction;
+use classifier_handler::classify_block;
 use inspection::database::mongo_client::{MongoDBClient, MongoDBClientConfig, MongoDBStage};
 use inspection::filtering::{post_process, PostProcessConfig};
 use inspection::{database, label_tree};
@@ -54,61 +51,21 @@ pub fn entry(args: InspectArgs) {
         }
     };
 
-    if block.transactions.is_none() {
-        eprintln!("No transactions in block data");
-        return;
-    }
-
-    let block_time = match block.block_time {
-        Some(time) => time,
-        None => {
-            eprintln!("No block time in block data");
-            return;
-        }
-    };
-
     println!(
         "Inspecting {} transactions from slot {}",
         block.transactions.as_ref().unwrap().len(),
         args.slot
     );
 
-    let root_action = Block::new(args.slot, block_time);
-    let mut tree = ActionTree::new(root_action.into());
+    let mut tree = match classify_block(args.slot, block) {
+        Ok(tree) => tree,
+        Err(err) => {
+            eprintln!("Failed to classify block: {:?}", err);
+            return;
+        }
+    };
+
     let block_id = tree.root();
-
-    for txn in block.transactions.unwrap() {
-        let v_txn = txn.transaction.decode().unwrap();
-
-        if txn.meta.is_none() {
-            eprintln!("No transaction meta data");
-            continue;
-        }
-
-        // Setup new tree for each transaction.
-        // In the future, this will be entire block, or even multiple blocks.
-        // Either way, the plumbing is there for this to easily happen.
-        let signature = v_txn.signatures.first().unwrap().clone();
-
-        if let Some(filter) = &args.filter_transaction {
-            if signature.to_string() != *filter {
-                continue;
-            }
-        }
-
-        let c_txn = ClassifiableTransaction::new(v_txn, txn.meta.unwrap());
-        let tx_id = tree.insert_child(block_id, c_txn.clone().into());
-
-        match classify_transaction(c_txn, &mut tree, tx_id) {
-            Ok(_) => {}
-            Err(err) => {
-                eprintln!(
-                    "Failed to classify transaction: {:?}, signature: {}",
-                    err, signature
-                );
-            }
-        }
-    }
 
     label_tree(&mut tree);
 

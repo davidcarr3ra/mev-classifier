@@ -1159,7 +1159,9 @@ dependencies = [
  "classifier-trait",
  "solana-classifier",
  "solana-sdk",
+ "solana-transaction-status",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]

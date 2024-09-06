@@ -1,7 +1,9 @@
 use std::str::FromStr;
 
 use solana_sdk::{
-    message::v0::LoadedAddresses, pubkey::Pubkey, signature::Signature,
+    message::v0::LoadedAddresses,
+    pubkey::Pubkey,
+    signature::Signature,
     transaction::{TransactionError, VersionedTransaction},
 };
 use solana_transaction_status::{
@@ -17,6 +19,7 @@ pub struct ClassifiableTransaction {
     pub instructions: Vec<ClassifiableInstruction>,
     pub pre_token_balances: Option<Vec<UiTransactionTokenBalance>>,
     pub post_token_balances: Option<Vec<UiTransactionTokenBalance>>,
+    pub fee: u64,
 
     static_keys: Vec<Pubkey>,
     loaded_addresses: Option<LoadedAddresses>,
@@ -75,7 +78,7 @@ impl ClassifiableTransaction {
         let static_keys = txn.message.static_account_keys().into();
 
         let signature = txn.signatures.first().unwrap().clone();
-        
+
         Self {
             signature,
             status: meta.status,
@@ -84,6 +87,7 @@ impl ClassifiableTransaction {
             loaded_addresses,
             pre_token_balances: meta.pre_token_balances.into(),
             post_token_balances: meta.post_token_balances.into(),
+            fee: meta.fee,
         }
     }
 

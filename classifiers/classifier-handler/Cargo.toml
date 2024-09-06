@@ -8,6 +8,9 @@ crate-type = ["lib"]
 name = "classifier_handler"
 
 [dependencies]
+solana-sdk = { workspace = true }
+solana-transaction-status = { workspace = true }
+
 action-tree = { version = "0.1.0", path = "../../packages/action-tree" }
 actions = { version = "0.1.0", path = "../../packages/actions" }
 anchor-classifiers = { version = "0.1.0", path = "../anchor-classifiers" }
@@ -15,5 +18,5 @@ anyhow = "1.0.86"
 classifier-core = { version = "0.1.0", path = "../../packages/classifier-core" }
 classifier-trait = { version = "0.1.0", path = "../classifier-trait" }
 solana-classifier = { version = "0.1.0", path = "../solana-classifier" }
-solana-sdk = { workspace = true }
 thiserror = "1.0.63"
+tracing = "0.1.40"

@@ -18,10 +18,42 @@ pub trait MongoSerialize {
 
 impl MongoSerialize for Block {
     fn metadata_bson(&self) -> Option<bson::Document> {
-        Some(bson::doc! {
+        let mut document = bson::doc! {
             "_id": self.slot as i64,
             "block_time": self.block_time,
-        })
+        };
+
+        if let Some(total_base_fees) = self.total_base_fees {
+            document.insert(
+                "total_base_fees",
+                bson::Binary {
+                    subtype: bson::spec::BinarySubtype::Generic,
+                    bytes: total_base_fees.to_be_bytes().to_vec(),
+                },
+            );
+        }
+
+        if let Some(total_priority_fees) = self.total_priority_fees {
+            document.insert(
+                "total_priority_fees",
+                bson::Binary {
+                    subtype: bson::spec::BinarySubtype::Generic,
+                    bytes: total_priority_fees.to_be_bytes().to_vec(),
+                },
+            );
+        }
+
+        if let Some(total_tips) = self.total_tips {
+            document.insert(
+                "total_tips",
+                bson::Binary {
+                    subtype: bson::spec::BinarySubtype::Generic,
+                    bytes: total_tips.to_be_bytes().to_vec(),
+                },
+            );
+        }
+
+        Some(document)
     }
 }
 
