@@ -1,3 +1,4 @@
+pub mod database;
 pub mod filtering;
 mod jito_bundle_client;
 mod labelling;

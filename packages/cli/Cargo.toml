@@ -14,3 +14,4 @@ tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt"] }
 actions = { version = "0.1.0", path = "../actions" }
 classifier-handler = { version = "0.1.0", path = "../../classifiers/classifier-handler" }
 action-tree = { version = "0.1.0", path = "../action-tree" }
+tokio = "1.40.0"

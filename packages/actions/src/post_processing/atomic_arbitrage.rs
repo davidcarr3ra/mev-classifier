@@ -22,4 +22,8 @@ impl ActionTrait for AtomicArbitrage {
     fn recurse_during_classify(&self) -> bool {
         unreachable!("AtomicArbitrage should not be classified");
     }
+
+    fn is_document_root(&self) -> bool {
+        true
+    }
 }

@@ -15,9 +15,9 @@ solana-sdk = { workspace = true }
 solana-transaction-status = { workspace = true }
 spl-token = { workspace = true }
 
-indextree = "3.0"
 reqwest = "0.11"
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "1.0.63"
 action-tree = { version = "0.1.0", path = "../action-tree" }
 tracing = "0.1.40"
+mongodb = "3.1.0"

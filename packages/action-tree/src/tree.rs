@@ -6,6 +6,7 @@ mod display;
 pub type ActionNodeId = NodeId;
 pub type ActionNode = Node<Action>;
 pub type ActionNodeEdge = NodeEdge;
+pub type ActionDescendants<'a> = Descendants<'a, Action>;
 
 pub struct ActionTree {
     arena: Arena<Action>,
@@ -106,7 +107,7 @@ impl ActionTree {
         parent.children(&self.arena).count()
     }
 
-    pub fn descendants<'a>(&'a self, parent: ActionNodeId) -> Descendants<'a, Action> {
+    pub fn descendants<'a>(&'a self, parent: ActionNodeId) -> ActionDescendants {
         parent.descendants(&self.arena)
     }
 

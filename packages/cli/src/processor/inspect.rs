@@ -3,8 +3,9 @@ use actions::Block;
 use clap::Args;
 use classifier_core::ClassifiableTransaction;
 use classifier_handler::classify_transaction;
+use inspection::database::mongo_client::{MongoDBClient, MongoDBClientConfig, MongoDBStage};
 use inspection::filtering::{post_process, PostProcessConfig};
-use inspection::label_tree;
+use inspection::{database, label_tree};
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcBlockConfig};
 use solana_transaction_status::{TransactionDetails, UiTransactionEncoding};
 use std::fs::{self, File};
@@ -20,7 +21,7 @@ pub struct InspectArgs {
     #[clap(long, help = "Filter transactions by signature.")]
     filter_transaction: Option<String>,
 
-    #[clap(long, help = "Write tree to results folder", default_value = "true")]
+    #[clap(long, help = "Write tree to results folder", default_value = "false")]
     write_tree: bool,
 
     #[clap(
@@ -29,6 +30,9 @@ pub struct InspectArgs {
         default_value = "https://api.mainnet-beta.solana.com"
     )]
     rpc_url: String,
+
+    #[clap(long, help = "MongoDB URI to use for writing data.")]
+    mongo_uri: Option<String>,
 }
 
 pub fn entry(args: InspectArgs) {
@@ -55,13 +59,21 @@ pub fn entry(args: InspectArgs) {
         return;
     }
 
+    let block_time = match block.block_time {
+        Some(time) => time,
+        None => {
+            eprintln!("No block time in block data");
+            return;
+        }
+    };
+
     println!(
         "Inspecting {} transactions from slot {}",
         block.transactions.as_ref().unwrap().len(),
         args.slot
     );
 
-    let root_action = Block::new(args.slot);
+    let root_action = Block::new(args.slot, block_time);
     let mut tree = ActionTree::new(root_action.into());
     let block_id = tree.root();
 
@@ -108,6 +120,41 @@ pub fn entry(args: InspectArgs) {
         },
         &mut tree,
     );
+
+    let block_documents = match database::document_builder::build_block_documents(&tree, block_id) {
+        Ok(doc) => doc,
+        Err(err) => {
+            eprintln!("Failed to build block documents: {:?}", err);
+            return;
+        }
+    };
+
+    // Write block to beta DB (Should not be writing to prod with this CLI tool)
+    if let Some(mongo_uri) = args.mongo_uri {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+
+        rt.block_on(async {
+            let client = match MongoDBClient::new(MongoDBClientConfig {
+                uri: mongo_uri,
+                stage: MongoDBStage::Beta,
+            })
+            .await
+            {
+                Ok(client) => client,
+                Err(err) => {
+                    eprintln!("Failed to create MongoDB client: {:?}", err);
+                    return;
+                }
+            };
+
+            match client.write_block_documents(block_documents).await {
+                Ok(_) => {}
+                Err(err) => {
+                    eprintln!("Failed to write block documents: {:?}", err);
+                }
+            }
+        });
+    }
 
     if args.write_tree && tree.num_children(block_id) > 0 {
         // Create results directory if it doesn't exist

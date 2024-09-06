@@ -26,7 +26,7 @@ pub fn post_process(config: PostProcessConfig, tree: &mut ActionTree) {
 
         // Save transaction nodes for pruning
         match node {
-            Action::Transaction(_) => {
+            Action::ClassifiableTransaction(_) => {
                 transaction_list.push(node_id);
             }
             _ => {}
@@ -103,7 +103,7 @@ fn process_jito_bundles(
 
 fn search(tree: &ActionTree, node: ActionNodeId, tx_hash: &str) -> Option<ActionNodeId> {
     if let Some(action) = tree.get(node).map(|n| n.get()) {
-        if let Action::Transaction(tx) = action {
+        if let Action::ClassifiableTransaction(tx) = action {
             if tx.signature == Signature::from_str(tx_hash).ok()? {
                 return Some(node);
             }

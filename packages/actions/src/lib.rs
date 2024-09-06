@@ -10,7 +10,6 @@ pub use jito::*;
 pub use post_processing::*;
 pub use protocols::*;
 pub use solana::*;
-pub use transaction::*;
 
 use classifier_core::ClassifiableTransaction;
 use macros::define_actions;
@@ -28,6 +27,14 @@ define_actions! {
         /// then this should return true. For actions which are known to produce no
         /// more useful info regardless of inner instructions, return false.
         fn recurse_during_classify(&self) -> bool;
+
+        /// In DB, all children are grouped under a parent which is a child of a block node.
+        /// This will typically be a Transaction node, but may be other nodes based on its
+        /// classification. This function determines whether this action should be a
+        /// root level node, and thus where the document is constructed from.
+        fn is_document_root(&self) -> bool {
+            false
+        }
     },
 
     //
@@ -36,7 +43,6 @@ define_actions! {
 
     // Utility
     ClassifiableTransaction,
-    Transaction,
     Block,
 
     // Solana system actions

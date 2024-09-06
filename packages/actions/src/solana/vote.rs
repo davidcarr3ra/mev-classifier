@@ -1,6 +1,8 @@
 use macros::{action, action_enum};
 use solana_sdk::{pubkey::Pubkey, vote::state::VoteStateUpdate};
 
+use crate::ActionTrait;
+
 #[action_enum]
 pub enum Vote {
     CompactUpdateVoteState(CompactUpdateVoteState),
@@ -9,6 +11,12 @@ pub enum Vote {
 impl Vote {
     pub(crate) fn recurse_during_classify(&self) -> bool {
         false
+    }
+}
+
+impl ActionTrait for Vote {
+    fn recurse_during_classify(&self) -> bool {
+        self.recurse_during_classify()
     }
 }
 
