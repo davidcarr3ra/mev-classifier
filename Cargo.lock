@@ -1157,6 +1157,7 @@ dependencies = [
  "anyhow",
  "classifier-core",
  "classifier-trait",
+ "misc-classifiers",
  "solana-classifier",
  "solana-sdk",
  "solana-transaction-status",
@@ -2665,6 +2666,16 @@ dependencies = [
  "libc",
  "wasi 0.11.0+wasi-snapshot-preview1",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "misc-classifiers"
+version = "0.1.0"
+dependencies = [
+ "actions",
+ "classifier-core",
+ "classifier-trait",
+ "solana-sdk",
 ]
 
 [[package]]

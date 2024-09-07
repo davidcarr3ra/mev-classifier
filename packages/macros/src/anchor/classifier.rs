@@ -81,11 +81,9 @@ fn gen_classifier_impl(input: &AnchorClassifierInput) -> TokenStream {
 
     for variant in &input.variants {
         let arm = quote! {
-            actions::#anchor_mod::internal::#variant::DISCRIMINATOR => {
-                // let ix = actions::#anchor_mod::internal::#variant::deserialize(&mut &ix.data[8..])
-                //     .map_err(|e| #error_ident::DeserializationError(e.into()))?;
+            if ix.data.starts_with(actions::#anchor_mod::internal::#variant::DISCRIMINATOR) {
                 let decoded = actions::#actions_mod::#variant::from_instruction(txn, ix)?;
-                actions::#enum_name::#variant(decoded.into())
+                return Ok(Some(actions::#enum_name::#variant(decoded.into()).into()))
             }
         };
 
@@ -100,18 +98,9 @@ fn gen_classifier_impl(input: &AnchorClassifierInput) -> TokenStream {
                 txn: &classifier_core::ClassifiableTransaction,
                 ix: &classifier_core::ClassifiableInstruction) -> classifier_trait::ClassifyInstructionResult {
 
-                if ix.data.len() < 8 {
-                    return Err(#error_ident::InvalidLength.into());
-                }
+                #(#arms)*
 
-                let discriminator = &ix.data[..8];
-
-                let action = match discriminator {
-                    #(#arms)*
-                    _ => return Ok(None),
-                };
-
-                Ok(Some(action.into()))
+                Ok(None)
             }
         }
     }

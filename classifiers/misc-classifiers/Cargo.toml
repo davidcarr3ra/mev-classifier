@@ -1,0 +1,15 @@
+[package]
+edition.workspace = true
+name = "misc-classifiers"
+version = "0.1.0"
+
+[lib]
+crate-type = ["lib"]
+name = "misc_classifiers"
+
+[dependencies]
+solana-sdk = { workspace = true }
+
+actions = { version = "0.1.0", path = "../../packages/actions" }
+classifier-core = { version = "0.1.0", path = "../../packages/classifier-core" }
+classifier-trait = { version = "0.1.0", path = "../classifier-trait" }

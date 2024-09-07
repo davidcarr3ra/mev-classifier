@@ -58,15 +58,40 @@ pub fn classify_instruction(
         // Register all classifier modules here
         //
 
+        //
         // Solana classifiers
+        //
         solana_classifier::ComputeBudgetClassifier,
         solana_classifier::VoteClassifier,
         solana_classifier::SystemProgramClassifier,
+        //
         // Third party classifiers
+        //
         anchor_classifiers::WhirlpoolsClassifier,
         anchor_classifiers::JupiterV6Classifier,
         anchor_classifiers::MeteoraDlmmClassifier,
         anchor_classifiers::RaydiumClmmClassifier,
+        anchor_classifiers::PhoenixV1Classifier,
+        //
+        // Star atlas (shows up everywhere)
+        //
+        misc_classifiers::StarAtlasGalacticMarketplaceClassifier,
+        misc_classifiers::StarAtlasSAGEClassifier,
+        misc_classifiers::StarAtlasCraftingClassifier,
+        misc_classifiers::StarAtlasCargoClassifier,
+        misc_classifiers::StarAtlasPlayerProfileClassifier,
+        misc_classifiers::StarAtlasProfileVaultClassifier,
+        misc_classifiers::StarAtlasProfileFactionClassifier,
+        misc_classifiers::StarAtlasPointsClassifier,
+        misc_classifiers::StarAtlasPrimeClassifier,
+        misc_classifiers::StarAtlasClaimStakesClassifier,
+        misc_classifiers::StarAtlasSCOREClassifier,
+        misc_classifiers::StarAtlasSAGEEscapeVelocityClassifier,
+        misc_classifiers::StarAtlasDAOProxyRewarderClassifier,
+        misc_classifiers::StarAtlasLockerClassifier,
+        misc_classifiers::StarAtlasPolisLockerClassifier,
+        misc_classifiers::StarAtlasPolisLockerSnapshotsClassifier,
+        misc_classifiers::StarAtlasFactionEnlistmentClassifier,
     );
 
     let action = match action_result {

@@ -157,6 +157,7 @@ pub fn gen_anchor_action_declarations(input: DeclareAnchorActions) -> TokenStrea
 
             pub mod internal {
                 use super::types::*;
+                use anchor_lang::prelude::*;
 
                 #(#deserialize_ixs)*
             }

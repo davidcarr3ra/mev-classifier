@@ -26,7 +26,9 @@ define_actions! {
         ///
         /// then this should return true. For actions which are known to produce no
         /// more useful info regardless of inner instructions, return false.
-        fn recurse_during_classify(&self) -> bool;
+        fn recurse_during_classify(&self) -> bool {
+            true
+        }
 
         /// In DB, all children are grouped under a parent which is a child of a block node.
         /// This will typically be a Transaction node, but may be other nodes based on its
@@ -58,6 +60,9 @@ define_actions! {
     JupiterV6Action,
     MeteoraDlmmAction,
     RaydiumClmmAction,
+    PhoenixV1Action,
+    StarAtlasAction,
+
     // Post processing actions
     JitoBundle,
     DexSwap,
