@@ -23,7 +23,11 @@ pub enum ClassifyBlockError {
 
 type Result<T> = std::result::Result<T, ClassifyBlockError>;
 
-pub fn classify_block(slot: u64, block: UiConfirmedBlock) -> Result<ActionTree> {
+pub fn classify_block(
+    slot: u64,
+    block: UiConfirmedBlock,
+    filter_tx: Option<String>,
+) -> Result<ActionTree> {
     if block.transactions.is_none() {
         return Err(ClassifyBlockError::MissingTransactions);
     }
@@ -48,6 +52,13 @@ pub fn classify_block(slot: u64, block: UiConfirmedBlock) -> Result<ActionTree> 
         }
 
         let signature = v_txn.signatures.first().unwrap().clone();
+
+        if let Some(filter_tx) = &filter_tx {
+            if filter_tx != &signature.to_string() {
+                continue;
+            }
+        }
+
         let c_txn = ClassifiableTransaction::new(v_txn, txn.meta.unwrap());
         let tx_id = tree.insert_child(block_id, c_txn.clone().into());
 

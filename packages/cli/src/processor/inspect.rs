@@ -57,7 +57,7 @@ pub fn entry(args: InspectArgs) {
         args.slot
     );
 
-    let mut tree = match classify_block(args.slot, block) {
+    let mut tree = match classify_block(args.slot, block, args.filter_transaction) {
         Ok(tree) => tree,
         Err(err) => {
             eprintln!("Failed to classify block: {:?}", err);

@@ -104,13 +104,11 @@ impl ClassifiableTransaction {
             .position(|inner| inner.index == idx as u8);
 
         if let Some(inners_idx) = inners_idx {
-            let mut inners = inner_instructions.remove(inners_idx);
+            let inners = inner_instructions.remove(inners_idx);
 
             let mut ui_instructions = Vec::with_capacity(inners.instructions.len());
 
-            while inners.instructions.len() > 0 {
-                let inner = inners.instructions.pop().unwrap();
-
+            for inner in inners.instructions {
                 let decoded = match ClassifiableInstruction::from_ui(inner) {
                     Ok(decoded) => decoded,
                     Err(err) => {
@@ -179,7 +177,7 @@ impl ClassifiableTransaction {
         let index = self.get_index_for_pubkey(pubkey).ok_or_else(|| {
             anyhow::anyhow!("Could not find pubkey {:?} in loaded addresses", pubkey)
         })?;
-    
+
         if let Some(pre_balances) = &self.pre_token_balances {
             for balance in pre_balances {
                 if balance.account_index == index {
@@ -190,7 +188,11 @@ impl ClassifiableTransaction {
             return Err(anyhow::anyhow!("No pre token balances found"));
         }
 
-        tracing::trace!("Could not find pre token balance for pubkey {:?}, index {}", pubkey, index);
+        tracing::trace!(
+            "Could not find pre token balance for pubkey {:?}, index {}",
+            pubkey,
+            index
+        );
         Err(anyhow::anyhow!(
             "Could not find pre token balance for pubkey {:?}",
             pubkey

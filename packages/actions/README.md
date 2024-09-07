@@ -9,3 +9,4 @@
 [ ] Kamino: KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD
 [ ] Kamino Farms: FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr
 [ ] Openbook: opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb
+[ ] Zeta: ZETAxsqBRek56DhiGXrn75yj2NHU3aYUnxvHXpkf3aD
