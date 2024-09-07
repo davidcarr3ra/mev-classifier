@@ -179,7 +179,7 @@ impl ClassifiableTransaction {
         let index = self.get_index_for_pubkey(pubkey).ok_or_else(|| {
             anyhow::anyhow!("Could not find pubkey {:?} in loaded addresses", pubkey)
         })?;
-
+    
         if let Some(pre_balances) = &self.pre_token_balances {
             for balance in pre_balances {
                 if balance.account_index == index {
@@ -190,6 +190,7 @@ impl ClassifiableTransaction {
             return Err(anyhow::anyhow!("No pre token balances found"));
         }
 
+        tracing::trace!("Could not find pre token balance for pubkey {:?}, index {}", pubkey, index);
         Err(anyhow::anyhow!(
             "Could not find pre token balance for pubkey {:?}",
             pubkey
@@ -214,6 +215,7 @@ impl ClassifiableTransaction {
             return Err(anyhow::anyhow!("No post token balances found"));
         }
 
+        tracing::trace!("Could not find post token balance for pubkey {:?}", pubkey);
         Err(anyhow::anyhow!(
             "Could not find post token balance for pubkey {:?}",
             pubkey

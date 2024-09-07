@@ -35,6 +35,8 @@ declare_anchor_actions!(
         Accounts: {
             source_token_account,
             destination_token_account,
+            program_source_token_account,
+            program_destination_token_account,
         },
     }
 );
@@ -85,8 +87,9 @@ impl jupiter_v6_actions::RouteWithTokenLedger {
 
 impl jupiter_v6_actions::SharedAccountsRoute {
     pub fn into_dex_swap(&self, txn: &ClassifiableTransaction) -> Result<DexSwap, anyhow::Error> {
-        let input_mint = txn.get_mint_for_token_account(&self.source_token_account)?;
-        let output_mint = txn.get_mint_for_token_account(&self.destination_token_account)?;
+        let input_mint = txn.get_mint_for_token_account(&self.program_source_token_account)?;
+        let output_mint =
+            txn.get_mint_for_token_account(&self.program_destination_token_account)?;
 
         Ok(DexSwap {
             input_mint,

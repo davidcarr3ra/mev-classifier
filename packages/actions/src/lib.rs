@@ -53,6 +53,7 @@ define_actions! {
     Vote,
     SetComputeBudgetLimit,
     SetComputeUnitPrice,
+    Token,
 
     // 3rd party actions
     JitoTip,

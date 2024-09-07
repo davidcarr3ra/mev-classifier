@@ -1,4 +1,7 @@
-use actions::{Action, RaydiumAmmAction};
+use actions::{
+    raydium_amm_actions::{SwapBaseIn, SwapBaseOut},
+    Action, RaydiumAmmAction,
+};
 use classifier_core::{ClassifiableInstruction, ClassifiableTransaction};
 use classifier_trait::{ClassifyInstructionResult, InstructionClassifier};
 use solana_sdk::pubkey::Pubkey;
@@ -9,10 +12,10 @@ impl InstructionClassifier for RaydiumAmmClassifier {
     const ID: Pubkey = solana_sdk::pubkey!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8");
 
     fn classify_instruction(
-        _txn: &ClassifiableTransaction,
+        txn: &ClassifiableTransaction,
         ix: &ClassifiableInstruction,
     ) -> ClassifyInstructionResult {
-        let (&tag, _rest) = ix
+        let (&tag, rest) = ix
             .data
             .split_first()
             .ok_or_else(|| anyhow::anyhow!("Invalid Raydium AMM instruction data"))?;
@@ -37,13 +40,11 @@ impl InstructionClassifier for RaydiumAmmClassifier {
             8 => Ok(Some(Action::RaydiumAmmAction(
                 RaydiumAmmAction::WithdrawSrm,
             ))),
-            9 => Ok(Some(Action::RaydiumAmmAction(RaydiumAmmAction::SwapBaseIn))),
+            9 => classify_swap_base_in(txn, ix, rest),
             10 => Ok(Some(Action::RaydiumAmmAction(
                 RaydiumAmmAction::Preinitialize,
             ))),
-            11 => Ok(Some(Action::RaydiumAmmAction(
-                RaydiumAmmAction::SwapBaseOut,
-            ))),
+            11 => classify_swap_base_out(txn, ix, rest),
             12 => Ok(Some(Action::RaydiumAmmAction(
                 RaydiumAmmAction::SimulateInstruction,
             ))),
@@ -59,4 +60,80 @@ impl InstructionClassifier for RaydiumAmmClassifier {
             _ => Ok(None),
         }
     }
+}
+
+fn classify_swap_base_in(
+    txn: &ClassifiableTransaction,
+    ix: &ClassifiableInstruction,
+    rest: &[u8],
+) -> ClassifyInstructionResult {
+    let amount_in = rest
+        .get(0..8)
+        .and_then(|bytes| bytes.try_into().ok())
+        .map(u64::from_le_bytes)
+        .ok_or_else(|| anyhow::anyhow!("Invalid Raydium AMM swap base in instruction"))?;
+
+    if ix.accounts.len() < 17 {
+        return Err(anyhow::anyhow!(
+            "Invalid Raydium AMM swap base in instruction: not enough accounts"
+        ));
+    }
+
+    let user_source_account = txn.get_pubkey(ix.accounts[15]).ok_or_else(|| {
+        anyhow::anyhow!(
+            "Invalid Raydium AMM swap base in instruction: user source account not found"
+        )
+    })?;
+
+    let user_destination_account = txn.get_pubkey(ix.accounts[16]).ok_or_else(|| {
+        anyhow::anyhow!(
+            "Invalid Raydium AMM swap base in instruction: user destination account not found"
+        )
+    })?;
+
+    Ok(Some(Action::RaydiumAmmAction(
+        RaydiumAmmAction::SwapBaseIn(SwapBaseIn {
+            amount_in,
+            user_destination_account,
+            user_source_account,
+        }),
+    )))
+}
+
+fn classify_swap_base_out(
+    txn: &ClassifiableTransaction,
+    ix: &ClassifiableInstruction,
+    rest: &[u8],
+) -> ClassifyInstructionResult {
+    let amount_in = rest
+        .get(0..8)
+        .and_then(|bytes| bytes.try_into().ok())
+        .map(u64::from_le_bytes)
+        .ok_or_else(|| anyhow::anyhow!("Invalid Raydium AMM swap base in instruction"))?;
+
+    if ix.accounts.len() < 17 {
+        return Err(anyhow::anyhow!(
+            "Invalid Raydium AMM swap base in instruction: not enough accounts"
+        ));
+    }
+
+    let user_source_account = txn.get_pubkey(ix.accounts[15]).ok_or_else(|| {
+        anyhow::anyhow!(
+            "Invalid Raydium AMM swap base in instruction: user source account not found"
+        )
+    })?;
+
+    let user_destination_account = txn.get_pubkey(ix.accounts[16]).ok_or_else(|| {
+        anyhow::anyhow!(
+            "Invalid Raydium AMM swap base in instruction: user destination account not found"
+        )
+    })?;
+
+    Ok(Some(Action::RaydiumAmmAction(
+        RaydiumAmmAction::SwapBaseOut(SwapBaseOut {
+            amount_in,
+            user_destination_account,
+            user_source_account,
+        }),
+    )))
 }

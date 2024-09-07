@@ -4093,6 +4093,7 @@ dependencies = [
  "classifier-trait",
  "macros",
  "solana-sdk",
+ "spl-token",
  "thiserror",
 ]
 
