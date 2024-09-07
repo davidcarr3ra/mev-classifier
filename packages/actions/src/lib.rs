@@ -54,6 +54,7 @@ define_actions! {
     SetComputeBudgetLimit,
     SetComputeUnitPrice,
     Token,
+    AssociatedToken,
 
     // 3rd party actions
     JitoTip,

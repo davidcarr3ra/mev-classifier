@@ -65,6 +65,7 @@ pub fn classify_instruction(
         solana_classifier::VoteClassifier,
         solana_classifier::SystemProgramClassifier,
         solana_classifier::TokenProgramClassifier,
+        solana_classifier::AssociatedTokenClassifier,
         //
         // Third party classifiers
         //

@@ -9,6 +9,7 @@ name = "solana_classifier"
 
 [dependencies]
 solana-sdk = { workspace = true }
+spl-associated-token-account = { workspace = true }
 spl-token = { workspace = true }
 
 actions = { version = "0.1.0", path = "../../packages/actions" }
