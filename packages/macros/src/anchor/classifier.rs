@@ -73,7 +73,6 @@ fn gen_classifier_impl(input: &AnchorClassifierInput) -> TokenStream {
         format_ident!("{}Classifier", input.name.to_string().to_upper_camel_case());
 
     let enum_name = format_ident!("{}Action", input.name.to_string().to_upper_camel_case());
-    let error_ident = format_ident!("{}Error", input.name.to_string().to_upper_camel_case());
 
     let id = gen_id(&input.idl);
 

@@ -60,6 +60,7 @@ define_actions! {
     JupiterV6Action,
     MeteoraDlmmAction,
     RaydiumClmmAction,
+    RaydiumAmmAction,
     PhoenixV1Action,
     StarAtlasAction,
 

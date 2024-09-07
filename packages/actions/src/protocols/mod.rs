@@ -4,7 +4,9 @@ mod phoenix_v1;
 mod raydium_clmm;
 mod star_atlas;
 mod whirlpools;
+mod raydium_amm;
 
+pub use raydium_amm::*;
 pub use jupiter_v6::*;
 pub use meteora_dlmm::*;
 pub use phoenix_v1::*;
