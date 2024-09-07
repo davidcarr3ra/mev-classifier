@@ -79,13 +79,20 @@ fn classify_swap_base_in(
         ));
     }
 
-    let user_source_account = txn.get_pubkey(ix.accounts[15]).ok_or_else(|| {
+    let mut source_idx = 14;
+    let mut destination_idx = 15;
+    if ix.accounts.len() == 18 {
+        source_idx = 15;
+        destination_idx = 16;
+    }
+
+    let user_source_account = txn.get_pubkey(ix.accounts[source_idx]).ok_or_else(|| {
         anyhow::anyhow!(
             "Invalid Raydium AMM swap base in instruction: user source account not found"
         )
     })?;
 
-    let user_destination_account = txn.get_pubkey(ix.accounts[16]).ok_or_else(|| {
+    let user_destination_account = txn.get_pubkey(ix.accounts[destination_idx]).ok_or_else(|| {
         anyhow::anyhow!(
             "Invalid Raydium AMM swap base in instruction: user destination account not found"
         )

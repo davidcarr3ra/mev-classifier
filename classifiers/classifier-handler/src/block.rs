@@ -62,7 +62,7 @@ pub fn classify_block(
         let c_txn = ClassifiableTransaction::new(v_txn, txn.meta.unwrap());
         let tx_id = tree.insert_child(block_id, c_txn.clone().into());
 
-        match classify_transaction(c_txn, &mut tree, tx_id) {
+        match classify_transaction(&c_txn, &mut tree, tx_id) {
             Ok(_) => {}
             Err(err) => {
                 // TODO: Handle these somehow

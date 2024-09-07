@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 use solana_sdk::{
     message::v0::LoadedAddresses,
@@ -20,6 +20,7 @@ pub struct ClassifiableTransaction {
     pub pre_token_balances: Option<Vec<UiTransactionTokenBalance>>,
     pub post_token_balances: Option<Vec<UiTransactionTokenBalance>>,
     pub fee: u64,
+    pub created_tokens: Option<HashMap<Pubkey, Pubkey>>,
 
     static_keys: Vec<Pubkey>,
     loaded_addresses: Option<LoadedAddresses>,
@@ -88,6 +89,7 @@ impl ClassifiableTransaction {
             pre_token_balances: meta.pre_token_balances.into(),
             post_token_balances: meta.post_token_balances.into(),
             fee: meta.fee,
+            created_tokens: None,
         }
     }
 
@@ -189,9 +191,9 @@ impl ClassifiableTransaction {
         }
 
         tracing::trace!(
-            "Could not find pre token balance for pubkey {:?}, index {}",
+            "Could not find pre token balance for pubkey {:?}, signature {:?}",
             pubkey,
-            index
+            self.signature
         );
         Err(anyhow::anyhow!(
             "Could not find pre token balance for pubkey {:?}",
@@ -217,7 +219,7 @@ impl ClassifiableTransaction {
             return Err(anyhow::anyhow!("No post token balances found"));
         }
 
-        tracing::trace!("Could not find post token balance for pubkey {:?}", pubkey);
+        tracing::trace!("Could not find post token balance for pubkey {:?}, {:?}", pubkey, self.signature);
         Err(anyhow::anyhow!(
             "Could not find post token balance for pubkey {:?}",
             pubkey
@@ -225,6 +227,12 @@ impl ClassifiableTransaction {
     }
 
     pub fn get_mint_for_token_account(&self, pubkey: &Pubkey) -> Result<Pubkey, anyhow::Error> {
+        if let Some(created_tokens) = &self.created_tokens {
+            if let Some(mint) = created_tokens.get(pubkey) {
+                return Ok(*mint);
+            }
+        }
+
         let balance = self.get_pre_token_balance(pubkey)?;
 
         Ok(Pubkey::from_str(&balance.mint).unwrap())
