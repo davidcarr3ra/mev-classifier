@@ -27,25 +27,28 @@ impl ActionTrait for RaydiumAmmAction {
     fn recurse_during_classify(&self) -> bool {
         false
     }
-}
+    
+    fn into_dex_swap(
+        &self,
+        txn: &ClassifiableTransaction,
+    ) -> Result<Option<DexSwap>, anyhow::Error> {
+        let dex_swap = match self {
+            RaydiumAmmAction::SwapBaseIn(action) => DexSwap {
+                input_mint: txn.get_mint_for_token_account(&action.user_source_account)?,
+                output_mint: txn.get_mint_for_token_account(&action.user_destination_account)?,
+                input_token_account: action.user_source_account,
+                output_token_account: action.user_destination_account,
+            },
+            RaydiumAmmAction::SwapBaseOut(action) => DexSwap {
+                input_mint: txn.get_mint_for_token_account(&action.user_source_account)?,
+                output_mint: txn.get_mint_for_token_account(&action.user_destination_account)?,
+                input_token_account: action.user_source_account,
+                output_token_account: action.user_destination_account,
+            },
+            _ => return Err(anyhow::anyhow!("Invalid Raydium AMM action")),
+        };
 
-impl RaydiumAmmAction {
-    pub fn into_dex_swap(&self, txn: &ClassifiableTransaction) -> Result<DexSwap, anyhow::Error> {
-        match self {
-            RaydiumAmmAction::SwapBaseIn(action) => Ok(DexSwap {
-                input_mint: txn.get_mint_for_token_account(&action.user_source_account)?,
-                output_mint: txn.get_mint_for_token_account(&action.user_destination_account)?,
-                input_token_account: action.user_source_account,
-                output_token_account: action.user_destination_account,
-            }),
-            RaydiumAmmAction::SwapBaseOut(action) => Ok(DexSwap {
-                input_mint: txn.get_mint_for_token_account(&action.user_source_account)?,
-                output_mint: txn.get_mint_for_token_account(&action.user_destination_account)?,
-                input_token_account: action.user_source_account,
-                output_token_account: action.user_destination_account,
-            }),
-            _ => Err(anyhow::anyhow!("Invalid Raydium AMM action")),
-        }
+        Ok(Some(dex_swap))
     }
 }
 

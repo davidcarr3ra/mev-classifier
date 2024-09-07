@@ -33,6 +33,7 @@ dependencies = [
  "serde",
  "solana-sdk",
  "solana-transaction-status",
+ "tracing",
 ]
 
 [[package]]

@@ -58,6 +58,11 @@ fn try_find_atomic_arb(
         let action = tree.get(child).unwrap().get();
 
         match action {
+            Action::ClassifiableTransaction(txn) => {
+                if txn.status.is_err() {
+                    return Ok(None);
+                }
+            }
             Action::DexSwap(swap) => {
                 if first_swap.is_none() {
                     first_swap = Some(swap);
@@ -91,7 +96,12 @@ fn try_find_atomic_arb(
         let out_amount = u64::from_str_radix(&post_balance.ui_token_amount.amount, 10)
             .map_err(|e| ClassifyAtomicArbitrageError::ParseAmount(e))?;
 
-        let profit_amount = out_amount - in_amount;
+        let profit_amount = if out_amount > in_amount {
+            out_amount - in_amount
+        } else {
+            // TODO: Classify failed arbitrage?
+            0
+        };
 
         return Ok(Some(AtomicArbitrage::new(
             first_swap.input_mint,

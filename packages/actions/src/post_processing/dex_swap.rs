@@ -15,16 +15,10 @@ pub struct DexSwap {
 
 impl DexSwap {
     pub fn try_from(action: &Action, txn: &ClassifiableTransaction) -> Option<Self> {
-        let dex_swap = match action {
-            Action::JupiterV6Action(action) => action.into_dex_swap(txn),
-            Action::RaydiumAmmAction(action) => action.into_dex_swap(txn),
-            _ => return None,
-        };
-
-        match dex_swap {
-            Ok(dex_swap) => Some(dex_swap),
+        match action.into_dex_swap(txn) {
+            Ok(dex_swap) => dex_swap,
             Err(e) => {
-                println!("Failed to convert action into DexSwap: {:?}", e);
+                tracing::error!("Failed to convert action into DexSwap: {:?}", e);
                 None
             }
         }

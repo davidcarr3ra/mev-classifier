@@ -37,6 +37,12 @@ define_actions! {
         fn is_document_root(&self) -> bool {
             false
         }
+
+        /// Optionally convert action into DexSwap during post processing
+        #[allow(unused_variables)]
+        fn into_dex_swap(&self, txn: &ClassifiableTransaction) -> Result<Option<DexSwap>, anyhow::Error> {
+            Ok(None)
+        }
     },
 
     //

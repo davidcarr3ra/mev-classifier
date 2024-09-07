@@ -45,10 +45,11 @@ impl ActionTrait for JupiterV6Action {
     fn recurse_during_classify(&self) -> bool {
         true
     }
-}
 
-impl JupiterV6Action {
-    pub fn into_dex_swap(&self, txn: &ClassifiableTransaction) -> Result<DexSwap, anyhow::Error> {
+    fn into_dex_swap(
+        &self,
+        txn: &ClassifiableTransaction,
+    ) -> Result<Option<DexSwap>, anyhow::Error> {
         match self {
             JupiterV6Action::Route(route) => route.into_dex_swap(txn),
             JupiterV6Action::RouteWithTokenLedger(route) => route.into_dex_swap(txn),
@@ -58,44 +59,44 @@ impl JupiterV6Action {
 }
 
 impl jupiter_v6_actions::Route {
-    pub fn into_dex_swap(&self, txn: &ClassifiableTransaction) -> Result<DexSwap, anyhow::Error> {
+    pub fn into_dex_swap(&self, txn: &ClassifiableTransaction) -> Result<Option<DexSwap>, anyhow::Error> {
         let input_mint = txn.get_mint_for_token_account(&self.user_source_token_account)?;
         let output_mint = txn.get_mint_for_token_account(&self.user_destination_token_account)?;
 
-        Ok(DexSwap {
+        Ok(Some(DexSwap {
             input_mint,
             output_mint,
             input_token_account: self.user_source_token_account,
             output_token_account: self.user_destination_token_account,
-        })
+        }))
     }
 }
 
 impl jupiter_v6_actions::RouteWithTokenLedger {
-    pub fn into_dex_swap(&self, txn: &ClassifiableTransaction) -> Result<DexSwap, anyhow::Error> {
+    pub fn into_dex_swap(&self, txn: &ClassifiableTransaction) -> Result<Option<DexSwap>, anyhow::Error> {
         let input_mint = txn.get_mint_for_token_account(&self.user_source_token_account)?;
         let output_mint = txn.get_mint_for_token_account(&self.user_destination_token_account)?;
 
-        Ok(DexSwap {
+        Ok(Some(DexSwap {
             input_mint,
             output_mint,
             input_token_account: self.user_source_token_account,
             output_token_account: self.user_destination_token_account,
-        })
+        }))
     }
 }
 
 impl jupiter_v6_actions::SharedAccountsRoute {
-    pub fn into_dex_swap(&self, txn: &ClassifiableTransaction) -> Result<DexSwap, anyhow::Error> {
+    pub fn into_dex_swap(&self, txn: &ClassifiableTransaction) -> Result<Option<DexSwap>, anyhow::Error> {
         let input_mint = txn.get_mint_for_token_account(&self.program_source_token_account)?;
         let output_mint =
             txn.get_mint_for_token_account(&self.program_destination_token_account)?;
 
-        Ok(DexSwap {
+        Ok(Some(DexSwap {
             input_mint,
             output_mint,
             input_token_account: self.source_token_account,
             output_token_account: self.destination_token_account,
-        })
+        }))
     }
 }

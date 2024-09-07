@@ -46,15 +46,21 @@ impl ActionTree {
     /// Creates a new parent node and moves the given node under it.
     pub fn insert_parent(&mut self, node_id: ActionNodeId, action: Action) -> ActionNodeId {
         let node = self.arena.get_mut(node_id).unwrap();
-        let sibling_id = node.previous_sibling();
+        let prev_sibling_id = node.previous_sibling();
+        let next_sibling_id = node.next_sibling();
         let parent_id = node.parent().expect("Node has no parent");
 
         node_id.detach(&mut self.arena);
 
-        let new_parent_id = if let Some(sibling_id) = sibling_id {
+        let new_parent_id = if let Some(prev_sibling_id) = prev_sibling_id {
             // Add node at end of tree and link to previous sibling
             let new_parent = self.arena.new_node(action);
-            sibling_id.insert_after(new_parent, &mut self.arena);
+            prev_sibling_id.insert_after(new_parent, &mut self.arena);
+            new_parent
+        } else if let Some(next_sibling_id) = next_sibling_id {
+            // Add node at start of tree and link to next sibling
+            let new_parent = self.arena.new_node(action);
+            next_sibling_id.insert_before(new_parent, &mut self.arena);
             new_parent
         } else {
             // Insert node as first child of parent

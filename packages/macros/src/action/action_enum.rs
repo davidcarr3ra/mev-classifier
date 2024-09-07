@@ -61,15 +61,35 @@ pub fn parse_define_action_enum(input: ActionEnumInput) -> TokenStream {
     let method_impls = trait_methods.iter().filter_map(|item| {
         if let syn::TraitItem::Method(method) = item {
             let method_name = &method.sig.ident;
+            let method_args = &method.sig.inputs;
+            let method_output = &method.sig.output;
+
+            let arg_names: Vec<_> = method
+                .sig
+                .inputs
+                .iter()
+                .filter_map(|arg| {
+                    if let syn::FnArg::Typed(pat_type) = arg {
+                        if let syn::Pat::Ident(pat_ident) = &*pat_type.pat {
+                            Some(pat_ident.ident.clone())
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+
             let match_arms = variants.iter().map(|variant| {
                 quote! {
-                    #enum_name::#variant(inner) => inner.#method_name(),
+                    #enum_name::#variant(inner) => inner.#method_name(#(#arg_names),*),
                 }
             });
 
             // Implement the trait method
             Some(quote! {
-                fn #method_name(&self) -> bool {
+                fn #method_name(#method_args) #method_output {
                     match self {
                         #(#match_arms)*
                     }

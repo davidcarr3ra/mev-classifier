@@ -17,3 +17,4 @@ borsh = "^0.10.3"
 classifier-core = { version = "0.1.0", path = "../classifier-core" }
 macros = { version = "0.1.0", path = "../macros" }
 serde.workspace = true
+tracing = "0.1.40"
