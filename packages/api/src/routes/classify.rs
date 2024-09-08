@@ -1,7 +1,9 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
-use axum::{extract::Query, Extension};
-use serde::Deserialize;
+use axum::{extract::Query, http::StatusCode, response::IntoResponse, Extension, Json};
+use futures::future;
+use serde::{Deserialize, Serialize};
+use tokio::{sync::oneshot, time::timeout};
 
 use super::AppState;
 
@@ -11,28 +13,88 @@ pub struct ClassifyQuery {
     pub limit: u64,
 }
 
+#[derive(Serialize)]
+struct ClassifySuccess {
+    successes: Vec<u64>,
+    failures: Vec<u64>,
+}
+
+#[derive(Serialize)]
+struct ClassifyError {
+    message: String,
+}
+
+enum ClassifyResponse {
+    Success(ClassifySuccess),
+    Error(ClassifyError),
+}
+
+impl IntoResponse for ClassifyResponse {
+    fn into_response(self) -> axum::response::Response {
+        match self {
+            ClassifyResponse::Success(success) => (StatusCode::OK, Json(success)).into_response(),
+            ClassifyResponse::Error(error) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, Json(error)).into_response()
+            }
+        }
+    }
+}
+
 pub async fn classify(
     Query(params): Query<ClassifyQuery>,
     Extension(state): Extension<Arc<AppState>>,
-) -> &'static str {
+) -> impl IntoResponse {
     let ClassifyQuery { start_slot, limit } = params;
 
     let mut requests = Vec::with_capacity(limit as usize);
-    let mut recievers = Vec::with_capacity(limit as usize);
+    let mut receivers = Vec::with_capacity(limit as usize);
+
+    // Create requests and receivers for each slot
     for slot in start_slot..start_slot + limit {
-        let (tx, rx) = tokio::sync::oneshot::channel();
-        let request = (slot, tx);
-        requests.push(request);
-        recievers.push(rx);
+        let (tx, rx) = oneshot::channel();
+        requests.push((slot, tx));
+        receivers.push(rx);
     }
 
+    // Send requests to the central processing thread
     if state.request_tx.send(requests).await.is_err() {
-        return "error";
+        // 500 Internal Server Error
+        return ClassifyResponse::Error(ClassifyError {
+            message: "Internal server error".to_string(),
+        });
     }
 
-    // Wait for all requests to be processed
-    // TODO: Timeout
-    futures::future::join_all(recievers).await;
+    let timeout_duration = Duration::from_secs(30);
 
-    "success"
+    // Collect results from the receivers, applying a timeout
+    // Prepare vectors to hold successes and failures
+    let mut successes = Vec::with_capacity(limit as usize);
+    let mut failures = Vec::with_capacity(limit as usize);
+
+    // Process the receivers and classify each slot as success or failure
+    let _ = future::join_all(receivers.into_iter().enumerate().map(|(i, receiver)| {
+        let slot = start_slot + i as u64;
+        async move {
+            match timeout(timeout_duration, receiver).await {
+                Ok(Ok(_)) => Some((slot, true)), // success
+                _ => Some((slot, false)),        // failure
+            }
+        }
+    }))
+    .await
+    .into_iter()
+    .filter_map(|result| result)
+    .for_each(|(slot, success)| {
+        if success {
+            successes.push(slot);
+        } else {
+            failures.push(slot);
+        }
+    });
+
+    // Return the results as JSON
+    ClassifyResponse::Success(ClassifySuccess {
+        successes,
+        failures,
+    })
 }
