@@ -7,7 +7,7 @@ version = "0.1.0"
 solana-client = { workspace = true }
 solana-transaction-status = { workspace = true }
 
-clap = { version = "4.5.16", features = ["derive"] }
+clap = { version = "4.5.16", features = ["derive", "env"] }
 classifier-core = { version = "0.1.0", path = "../classifier-core" }
 inspection = { version = "0.1.0", path = "../inspection" }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt"] }
@@ -15,3 +15,4 @@ actions = { version = "0.1.0", path = "../actions" }
 classifier-handler = { version = "0.1.0", path = "../../classifiers/classifier-handler" }
 action-tree = { version = "0.1.0", path = "../action-tree" }
 tokio = "1.40.0"
+time-machine-api = { version = "0.1.0", path = "../api" }

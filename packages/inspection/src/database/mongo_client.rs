@@ -9,7 +9,8 @@ use mongodb::{
 
 use super::document_builder::BlockDocuments;
 
-type Result<T> = std::result::Result<T, mongodb::error::Error>;
+pub type MongoDBClientError = mongodb::error::Error;
+type Result<T> = std::result::Result<T, MongoDBClientError>;
 
 pub enum MongoDBStage {
     Beta,
@@ -28,6 +29,7 @@ pub struct MongoDBClientConfig {
     pub stage: MongoDBStage,
 }
 
+#[derive(Clone)]
 pub struct MongoDBClient {
     client: Client,
     database_name: String,
@@ -74,10 +76,7 @@ impl MongoDBClient {
         // Reference the database and collections
         let db = self.client.database(&self.database_name);
         let blocks_collection: Collection<Document> = db.collection("blocks");
-        let transactions_collection = db.collection("transactions");
-        let metadata_collection = db.collection("block_metadata");
 
-        tracing::trace!("Inserting block document");
         let block_id = block_documents.block.get("_id").unwrap().clone();
         let block_filter = doc! { "_id": block_id.clone() };
         blocks_collection
@@ -86,32 +85,35 @@ impl MongoDBClient {
             .session(&mut session)
             .await?;
 
-        tracing::trace!("Removing stale transactions");
-        transactions_collection
-            .delete_many(doc! { "block_id": block_id.clone() })
-            .session(&mut session)
-            .await?;
+        // Delete and replace transactions
+        if !block_documents.transactions.is_empty() {
+            let transactions_collection = db.collection("transactions");
 
-        tracing::trace!("Inserting transactions");
-        transactions_collection
-            .insert_many(block_documents.transactions)
-            .await?;
+            transactions_collection
+                .delete_many(doc! { "block_id": block_id.clone() })
+                .session(&mut session)
+                .await?;
 
-        tracing::trace!("Removing stale block metadata");
-        metadata_collection
-            .delete_many(doc! { "block_id": block_id })
-            .session(&mut session)
-            .await?;
+            transactions_collection
+                .insert_many(block_documents.transactions)
+                .await?;
+        }
 
-        tracing::trace!("Inserting block metadata");
-        metadata_collection
-            .insert_many(block_documents.block_metadata)
-            .await?;
+        // Delete and replace metadata
+        if !block_documents.block_metadata.is_empty() {
+            let metadata_collection = db.collection("block_metadata");
+            metadata_collection
+                .delete_many(doc! { "block_id": block_id })
+                .session(&mut session)
+                .await?;
+
+            metadata_collection
+                .insert_many(block_documents.block_metadata)
+                .await?;
+        }
 
         // Commit transaction, retrying if necessary
         loop {
-            tracing::trace!("Committing transaction");
-
             let result = session.commit_transaction().await;
             if let Err(ref error) = result {
                 tracing::error!("Error committing transaction: {:?}", error);

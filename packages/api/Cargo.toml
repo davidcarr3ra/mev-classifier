@@ -1,0 +1,23 @@
+[package]
+edition.workspace = true
+name = "time-machine-api"
+version = "0.1.0"
+
+[lib]
+crate-type = ["lib"]
+name = "time_machine_api"
+
+[dependencies]
+solana-client = { workspace = true }
+solana-transaction-status = { workspace = true }
+
+axum = "0.7.5"
+serde.workspace = true
+thiserror = "1.0.63"
+tokio = "1.40.0"
+tracing = "0.1.40"
+futures = "0.3.30"
+inspection = { version = "0.1.0", path = "../inspection" }
+crossbeam = "0.8.4"
+classifier-handler = { version = "0.1.0", path = "../../classifiers/classifier-handler" }
+action-tree = { version = "0.1.0", path = "../action-tree" }
