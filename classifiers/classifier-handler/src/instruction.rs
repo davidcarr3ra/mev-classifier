@@ -1,5 +1,4 @@
-use action_tree::{ActionNodeId, ActionTree};
-use actions::{ActionTrait, ProgramInvocation};
+use actions::{ActionNodeId, ActionTrait, ActionTree, ProgramInvocation};
 use classifier_core::{ClassifiableInstruction, ClassifiableTransaction};
 use classifier_trait::InstructionClassifier;
 use thiserror::Error;

@@ -1,5 +1,4 @@
-use action_tree::ActionTree;
-use actions::{Action, Block};
+use actions::{Action, ActionTree, Block};
 use classifier_core::ClassifiableTransaction;
 use solana_transaction_status::UiConfirmedBlock;
 use thiserror::Error;

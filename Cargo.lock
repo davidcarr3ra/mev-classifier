@@ -16,7 +16,6 @@ dependencies = [
 name = "action-tree"
 version = "0.1.0"
 dependencies = [
- "actions",
  "indextree",
  "thiserror",
 ]
@@ -25,12 +24,14 @@ dependencies = [
 name = "actions"
 version = "0.1.0"
 dependencies = [
+ "action-tree",
  "anchor-lang",
  "anyhow",
  "borsh 0.10.3",
  "classifier-core",
  "macros",
  "serde",
+ "serde_json",
  "solana-sdk",
  "solana-transaction-status",
  "tracing",
@@ -1207,7 +1208,6 @@ dependencies = [
 name = "classifier-handler"
 version = "0.1.0"
 dependencies = [
- "action-tree",
  "actions",
  "anchor-classifiers",
  "anyhow",
@@ -2468,7 +2468,6 @@ dependencies = [
 name = "inspection"
 version = "0.1.0"
 dependencies = [
- "action-tree",
  "actions",
  "base58",
  "classifier-core",
@@ -3992,9 +3991,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.127"
+version = "1.0.128"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8043c06d9f82bd7271361ed64f415fe5e12a77fdb52e573e7f06a516dea329ad"
+checksum = "6ff5456707a1de34e7e37f2a6fd3d3f808c318259cbd01ab6377795054b483d8"
 dependencies = [
  "indexmap 2.5.0",
  "itoa",
@@ -5624,12 +5623,14 @@ name = "time-machine-api"
 version = "0.1.0"
 dependencies = [
  "action-tree",
+ "actions",
  "axum",
  "classifier-handler",
  "crossbeam",
  "futures",
  "inspection",
  "serde",
+ "serde_json",
  "solana-client",
  "solana-transaction-status",
  "thiserror",

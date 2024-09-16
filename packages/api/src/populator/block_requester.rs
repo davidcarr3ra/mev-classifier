@@ -5,7 +5,6 @@ use std::{
 };
 
 use crossbeam::channel;
-use inspection::database::{document_builder::BlockDocuments, mongo_client::MongoDBClient};
 use solana_client::{nonblocking::rpc_client::RpcClient, rpc_config::RpcBlockConfig};
 use solana_transaction_status::{TransactionDetails, UiTransactionEncoding};
 use thiserror::Error;
@@ -13,9 +12,18 @@ use tokio::sync::{mpsc, oneshot, Semaphore, TryAcquireError};
 
 use crate::populator::ClassifyBlockRequest;
 
-use super::ClassifyResult;
+use super::{
+    ClassifyBlockRequestSender, ClassifyBlockResponse, ClassifyBlockResponseReceiver,
+    ClassifyResult,
+};
 
-pub type IndexBlockRequest = Vec<(u64, oneshot::Sender<bool>)>;
+pub type FetchBlockSender = mpsc::Sender<Vec<FetchBlockRequest>>;
+pub type FetchBlockReceiver = mpsc::Receiver<Vec<FetchBlockRequest>>;
+
+pub struct FetchBlockRequest {
+    pub slot: u64,
+    pub response: oneshot::Sender<ClassifyResult>,
+}
 
 #[derive(Debug, Error)]
 pub enum BlockRequesterError {
@@ -33,6 +41,13 @@ pub struct BlockRequesterConfig {
     pub period: Duration,
 }
 
+/// BlockRequester handles coordinating requests for block data from the RPC client
+/// in order to respect RPC rate limits. It prioritizes user requests for block data
+/// at all times, secondly prioritizing live block data indexing and lastly backfilling.
+///
+/// This thread is the entrypoint to the overall classification flow. It fetches blocks,
+/// then forwards them to the classifier thread. Once the ActionTree has been created and labeled,
+/// it will be sent to the onshot channel provided by the initial FetchBlockRequest.
 pub struct BlockRequester {
     thread_handle: Option<tokio::task::JoinHandle<()>>,
 }
@@ -47,25 +62,19 @@ impl Drop for BlockRequester {
 
 impl BlockRequester {
     pub fn new(
-        request_rx: mpsc::Receiver<IndexBlockRequest>,
-        classifier_tx: crossbeam::channel::Sender<ClassifyBlockRequest>,
-        classify_result_rx: mpsc::Receiver<ClassifyResult>,
+        user_request_rx: FetchBlockReceiver,
+        classifier_tx: ClassifyBlockRequestSender,
+        classify_result_rx: ClassifyBlockResponseReceiver,
         rpc_client: Arc<RpcClient>,
-        mongo_client: MongoDBClient,
         config: BlockRequesterConfig,
     ) -> Self {
-        let (alert_tx, alert_rx) = mpsc::channel(10_000);
-
         let mut thread = BlockRequesterThread {
             requests_per_period: config.requests_per_period,
             period: config.period,
-            receiver: request_rx,
+            user_request_rx,
             classifier_tx,
             classify_result_rx,
-            alert_handle: AlertHandle::new(alert_tx),
-            alert_rx,
             rpc_client,
-            mongo_client,
             semaphore: Semaphore::new(config.requests_per_period),
             in_progress: HashMap::new(),
             pending_queue: VecDeque::new(),
@@ -79,48 +88,22 @@ impl BlockRequester {
     }
 }
 
-#[derive(Clone)]
-struct AlertHandle {
-    alert_tx: mpsc::Sender<(u64, bool)>,
-}
-
-impl AlertHandle {
-    fn new(alert_tx: mpsc::Sender<(u64, bool)>) -> Self {
-        Self { alert_tx }
-    }
-
-    async fn alert(&self, slot: u64, result: bool) {
-        match self.alert_tx.send((slot, result)).await {
-            Ok(_) => {}
-            Err(_) => {
-                tracing::error!("Failed to send alert");
-            }
-        }
-    }
-}
-
 pub(crate) struct BlockRequesterThread {
     pub requests_per_period: usize,
     pub period: Duration,
 
-    receiver: mpsc::Receiver<IndexBlockRequest>,
-    classifier_tx: crossbeam::channel::Sender<ClassifyBlockRequest>,
-    classify_result_rx: mpsc::Receiver<ClassifyResult>,
-
-    // Channels for scheduling alerts
-    alert_handle: AlertHandle,
-    alert_rx: mpsc::Receiver<(u64, bool)>,
+    user_request_rx: FetchBlockReceiver,
+    classifier_tx: ClassifyBlockRequestSender,
+    classify_result_rx: ClassifyBlockResponseReceiver,
 
     rpc_client: Arc<RpcClient>,
-    mongo_client: MongoDBClient,
     semaphore: Semaphore,
-    in_progress: HashMap<u64, Vec<oneshot::Sender<bool>>>,
+    in_progress: HashMap<u64, Vec<oneshot::Sender<ClassifyResult>>>,
     pending_queue: VecDeque<u64>,
 }
 
 impl BlockRequesterThread {
     pub(crate) async fn thread_loop(&mut self) {
-        // let mut semaphore = Semaphore::new(self.requests_per_period);
         let mut ticker = tokio::time::interval(self.period);
 
         loop {
@@ -135,58 +118,23 @@ impl BlockRequesterThread {
                 }
 
                 // Receive requests from users
-                recv = self.receiver.recv() => {
+                recv = self.user_request_rx.recv() => {
                     let requests = match recv {
                         Some(v) => v,
                         None => break,
                     };
-                    tracing::trace!("Received {} slot requests", requests.len());
 
-                    // Add slots to in progress set
-                    for (slot, response) in requests {
-                        if self.in_progress.contains_key(&slot) {
-                            continue;
-                        }
-
-                        self.pending_queue.push_back(slot);
-                        self.in_progress.entry(slot).or_default().push(response);
-                    }
-
-                    // Try to request blocks
-                    while self.semaphore.available_permits() > 0 && !self.pending_queue.is_empty() {
-                        self.try_request_block();
-                    }
+                    self.handle_requests(requests);
                 }
 
-                // Receive classifications and store in DB
+                // Receive classifications and dispatch to subscribers
                 classify_result = self.classify_result_rx.recv() => {
                     let classify_result = match classify_result {
                         Some(v) => v,
                         None => break,
                     };
 
-                    let (slot, result) = classify_result;
-
-                    match result {
-                        Ok(classification) => {
-                            self.commit_classifications(slot, classification, self.alert_handle.clone()).await;
-                        }
-                        Err(err) => {
-                           tracing::error!("Failed to classify block: {:?}", err);
-                            self.alert_result(slot, false);
-                        }
-                    };
-                }
-
-                // Receive alerts from other threads
-                alert = self.alert_rx.recv() => {
-                    let alert = match alert {
-                        Some(v) => v,
-                        None => break,
-                    };
-
-                    let (slot, result) = alert;
-                    self.alert_result(slot, result);
+                    self.handle_result(classify_result);
                 }
             }
         }
@@ -194,10 +142,35 @@ impl BlockRequesterThread {
         tracing::debug!("BlockRequesterThread exiting");
     }
 
-    fn alert_result(&mut self, slot: u64, result: bool) {
+    fn handle_requests(&mut self, requests: Vec<FetchBlockRequest>) {
+        tracing::trace!("Received {} FetchBlockRequests", requests.len());
+
+        // Add slots to in progress set
+        for request in requests {
+            if self.in_progress.contains_key(&request.slot) {
+                continue;
+            }
+
+            self.pending_queue.push_back(request.slot);
+            self.in_progress
+                .entry(request.slot)
+                .or_default()
+                .push(request.response);
+        }
+
+        // Try to request blocks until rate limit is reached
+        while self.semaphore.available_permits() > 0 && !self.pending_queue.is_empty() {
+            self.try_request_block();
+        }
+    }
+
+    fn handle_result(&mut self, result: ClassifyBlockResponse) {
+        let (slot, result) = result;
+        tracing::trace!("Classified block for slot {}", slot);
+
         let responses = self.in_progress.remove(&slot).unwrap_or_default();
         for response in responses {
-            match response.send(result) {
+            match response.send(result.clone()) {
                 Ok(_) => {}
                 Err(_) => {
                     tracing::error!("Failed to send classification result");
@@ -235,7 +208,7 @@ impl BlockRequesterThread {
     async fn request_task(
         rpc_client: Arc<RpcClient>,
         slot: u64,
-        classifier_tx: channel::Sender<ClassifyBlockRequest>,
+        classifier_tx: ClassifyBlockRequestSender,
     ) -> Result<()> {
         let block = rpc_client
             .get_block_with_config(
@@ -255,25 +228,5 @@ impl BlockRequesterThread {
         classifier_tx.send(populate_request)?;
 
         Ok(())
-    }
-
-    async fn commit_classifications(
-        &self,
-        slot: u64,
-        block_documents: BlockDocuments,
-        alert_handle: AlertHandle,
-    ) {
-        let mongo_client = self.mongo_client.clone();
-        tokio::spawn(async move {
-            tracing::trace!("Writing classification to MongoDB: slot {}", slot);
-            let result = mongo_client.write_block_documents(block_documents).await;
-            if let Err(err) = &result {
-                tracing::error!("Failed to write classification to MongoDB: {:?}", err);
-            }
-
-            tracing::trace!("Wrote classification to MongoDB: slot {}", slot);
-
-            alert_handle.alert(slot, result.is_ok()).await;
-        });
     }
 }

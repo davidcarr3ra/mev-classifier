@@ -1,5 +1,4 @@
-use action_tree::{ActionDescendants, ActionNodeId, ActionTree};
-use actions::{Action, ActionTrait};
+use actions::{Action, ActionDescendants, ActionNodeId, ActionTrait, ActionTree};
 use classifier_core::ClassifiableTransaction;
 use mongodb::bson::{self};
 use thiserror::Error;
@@ -100,7 +99,7 @@ fn build_action_stack(
                     Some(metadata) => metadata,
                     None => continue,
                 };
-                
+
                 metadata.insert("_id", bson::oid::ObjectId::new());
                 metadata.insert("block_id", slot_height);
                 root_metadata.push(metadata);

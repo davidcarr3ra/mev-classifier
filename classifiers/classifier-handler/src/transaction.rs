@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
-use action_tree::{ActionNodeId, ActionTree};
-use actions::{Action, AssociatedToken, Token};
+use actions::{Action, ActionNodeId, ActionTree, AssociatedToken, Token};
 use classifier_core::ClassifiableTransaction;
 use solana_sdk::pubkey::Pubkey;
 use thiserror::Error;

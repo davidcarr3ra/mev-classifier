@@ -1,5 +1,4 @@
-use action_tree::{ActionNodeId, ActionTree};
-use actions::{Action, DexSwap};
+use actions::{Action, ActionNodeId, ActionTree, DexSwap};
 
 pub fn classify_dex_swaps(root: ActionNodeId, tree: &mut ActionTree) {
     let mut parent_txn = None;
@@ -22,7 +21,7 @@ pub fn classify_dex_swaps(root: ActionNodeId, tree: &mut ActionTree) {
             None => continue,
         };
 
-        let dex_swap = match DexSwap::try_from(action, parent_txn) {
+        let dex_swap = match DexSwap::try_from(action, parent_txn, child_id, tree) {
             Some(dex_swap) => dex_swap,
             None => continue,
         };

@@ -1,7 +1,7 @@
 use classifier_core::ClassifiableTransaction;
 use macros::action_enum;
 
-use crate::{ActionTrait, DexSwap};
+use crate::{ActionNodeId, ActionTrait, ActionTree, DexSwap};
 
 #[action_enum]
 pub enum RaydiumAmmAction {
@@ -25,12 +25,17 @@ pub enum RaydiumAmmAction {
 
 impl ActionTrait for RaydiumAmmAction {
     fn recurse_during_classify(&self) -> bool {
-        false
+        match self {
+            RaydiumAmmAction::SwapBaseIn(_) | RaydiumAmmAction::SwapBaseOut(_) => true,
+            _ => false,
+        }
     }
-    
+
     fn into_dex_swap(
         &self,
         txn: &ClassifiableTransaction,
+        _action_id: ActionNodeId,
+        _tree: &ActionTree,
     ) -> Result<Option<DexSwap>, anyhow::Error> {
         let dex_swap = match self {
             RaydiumAmmAction::SwapBaseIn(action) => DexSwap {
@@ -38,12 +43,16 @@ impl ActionTrait for RaydiumAmmAction {
                 output_mint: txn.get_mint_for_token_account(&action.user_destination_account)?,
                 input_token_account: action.user_source_account,
                 output_token_account: action.user_destination_account,
+                input_amount: action.amount_in,
+                output_amount: 0,
             },
             RaydiumAmmAction::SwapBaseOut(action) => DexSwap {
                 input_mint: txn.get_mint_for_token_account(&action.user_source_account)?,
                 output_mint: txn.get_mint_for_token_account(&action.user_destination_account)?,
                 input_token_account: action.user_source_account,
                 output_token_account: action.user_destination_account,
+                input_amount: action.amount_in,
+                output_amount: 0,
             },
             _ => return Err(anyhow::anyhow!("Invalid Raydium AMM action")),
         };

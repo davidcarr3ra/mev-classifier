@@ -21,3 +21,5 @@ inspection = { version = "0.1.0", path = "../inspection" }
 crossbeam = "0.8.4"
 classifier-handler = { version = "0.1.0", path = "../../classifiers/classifier-handler" }
 action-tree = { version = "0.1.0", path = "../action-tree" }
+actions = { version = "0.1.0", path = "../actions" }
+serde_json = "1.0.128"

@@ -52,7 +52,7 @@ pub struct TimeMachineServerConfig {
 pub struct TimeMachineServer {
     addr: SocketAddr,
     rpc_client: Arc<RpcClient>,
-    mongo_client: MongoDBClient,
+    _mongo_client: MongoDBClient,
     rpc_requests_per_second: usize,
 }
 
@@ -61,7 +61,7 @@ impl TimeMachineServer {
         let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), config.port);
 
         let rpc_client = Arc::new(RpcClient::new(config.rpc_url));
-        let mongo_client = MongoDBClient::new(MongoDBClientConfig {
+        let _mongo_client = MongoDBClient::new(MongoDBClientConfig {
             stage: config.stage.into(),
             uri: config.mongo_uri,
         })
@@ -70,32 +70,31 @@ impl TimeMachineServer {
         Ok(Self {
             addr,
             rpc_client,
-            mongo_client,
+            _mongo_client,
             rpc_requests_per_second: config.rpc_requests_per_second,
         })
     }
 
     pub async fn serve(&self) -> Result<()> {
         // Setup up processing pipeline (one thread coordinates async work, one thread classifies blocks)
-        let (request_tx, request_rx) = tokio::sync::mpsc::channel(10_000);
-        let (populator_tx, populator_rx) = crossbeam::channel::unbounded();
+        let (user_request_tx, user_request_rx) = tokio::sync::mpsc::channel(10_000);
+        let (classifier_tx, classifier_rx) = crossbeam::channel::unbounded();
         let (classify_result_tx, classify_result_rx) = tokio::sync::mpsc::channel(10_000);
         let block_requester = BlockRequester::new(
-            request_rx,
-            populator_tx,
+            user_request_rx,
+            classifier_tx,
             classify_result_rx,
             self.rpc_client.clone(),
-            self.mongo_client.clone(),
             BlockRequesterConfig {
                 requests_per_period: self.rpc_requests_per_second,
                 period: std::time::Duration::from_secs(1),
             },
         );
 
-        let block_populator = BlockClassifier::new(populator_rx, classify_result_tx);
+        let block_populator = BlockClassifier::new(classifier_rx, classify_result_tx);
 
         // Setup routes
-        let classify_state = Arc::new(AppState { request_tx });
+        let classify_state = Arc::new(AppState { user_request_tx });
         let app = Router::new()
             .route("/classify", get(classify))
             .layer(Extension(classify_state));

@@ -1,16 +1,8 @@
-use action_tree::{ActionNodeId, ActionTree};
-use actions::{Action, AtomicArbitrage};
-use classifier_core::ClassifiableTransaction;
+use actions::{Action, ActionNodeId, ActionTree, AtomicArbitrage};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
 enum ClassifyAtomicArbitrageError {
-    #[error("Missing pre-token balance")]
-    MissingPreTokenBalance,
-
-    #[error("Missing post-token balance")]
-    MissingPostTokenBalance,
-
     #[error("Failed to parse amount")]
     ParseAmount(#[from] std::num::ParseIntError),
 }
@@ -21,12 +13,12 @@ pub fn classify_atomic_arbitrage(root: ActionNodeId, tree: &mut ActionTree) {
     for child_id in tree.descendants(root) {
         let action = tree.get(child_id).unwrap().get();
 
-        let transaction = match action {
-            Action::ClassifiableTransaction(txn) => txn,
+        match action {
+            Action::ClassifiableTransaction(_) => {}
             _ => continue,
         };
 
-        let atomic_arbitrage = match try_find_atomic_arb(tree, child_id, transaction) {
+        let atomic_arbitrage = match try_find_atomic_arb(tree, child_id) {
             Ok(Some(atomic_arbitrage)) => atomic_arbitrage,
             Err(e) => {
                 tracing::error!("Failed to classify atomic arbitrage: {:?}", e);
@@ -49,13 +41,20 @@ pub fn classify_atomic_arbitrage(root: ActionNodeId, tree: &mut ActionTree) {
 fn try_find_atomic_arb(
     tree: &ActionTree,
     txn_id: ActionNodeId,
-    txn: &ClassifiableTransaction,
 ) -> Result<Option<AtomicArbitrage>, ClassifyAtomicArbitrageError> {
     let mut first_swap = None;
     let mut last_swap = None;
 
+    // let mut parent_stack = vec![txn_id];
+
     for child in tree.descendants(txn_id) {
-        let action = tree.get(child).unwrap().get();
+        let action_node = tree.get(child).unwrap();
+        // let parent_id = action_node.parent().unwrap();
+        // if &parent_id != parent_stack.last().unwrap() {
+        //     parent_stack.push(parent_id);
+        // }
+
+        let action = action_node.get();
 
         match action {
             Action::ClassifiableTransaction(txn) => {
@@ -82,22 +81,8 @@ fn try_find_atomic_arb(
     let last_swap = last_swap.unwrap();
 
     if first_swap.input_mint == last_swap.output_mint {
-        let pre_balance = txn
-            .get_pre_token_balance(&first_swap.input_token_account)
-            .map_err(|_| ClassifyAtomicArbitrageError::MissingPreTokenBalance)?;
-
-        let post_balance = txn
-            .get_post_token_balance(&first_swap.output_token_account)
-            .map_err(|_| ClassifyAtomicArbitrageError::MissingPostTokenBalance)?;
-
-        let in_amount = u64::from_str_radix(&pre_balance.ui_token_amount.amount, 10)
-            .map_err(|e| ClassifyAtomicArbitrageError::ParseAmount(e))?;
-
-        let out_amount = u64::from_str_radix(&post_balance.ui_token_amount.amount, 10)
-            .map_err(|e| ClassifyAtomicArbitrageError::ParseAmount(e))?;
-
-        let profit_amount = if out_amount > in_amount {
-            out_amount - in_amount
+        let profit_amount = if last_swap.output_amount > first_swap.input_amount {
+            last_swap.output_amount - first_swap.input_amount
         } else {
             // TODO: Classify failed arbitrage?
             0

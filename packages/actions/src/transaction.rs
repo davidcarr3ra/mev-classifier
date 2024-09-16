@@ -10,4 +10,15 @@ impl ActionTrait for ClassifiableTransaction {
     fn is_document_root(&self) -> bool {
         true
     }
+
+    fn serializable(&self) -> bool {
+        true
+    }
+
+    fn to_json(&self) -> serde_json::Value {
+        serde_json::json!({
+            "type": "transaction",
+            "signature": self.signature.to_string(),
+        })
+    }
 }

@@ -1,7 +1,9 @@
 use macros::action;
+use serde::Serialize;
 
 use super::ActionTrait;
 
+#[derive(Serialize)]
 #[action]
 pub struct Block {
     pub slot: u64,
@@ -33,5 +35,20 @@ impl ActionTrait for Block {
 
     fn is_document_root(&self) -> bool {
         unreachable!("Blocks should not be document roots")
+    }
+
+    fn serializable(&self) -> bool {
+        true
+    }
+
+    fn to_json(&self) -> serde_json::Value {
+        serde_json::json!({
+            "slot": self.slot,
+            "parent_slot": self.parent_slot,
+            "block_time": self.block_time,
+            "total_base_fees": self.total_base_fees,
+            "total_priority_fees": self.total_priority_fees,
+            "total_tips": self.total_tips,
+        })
     }
 }

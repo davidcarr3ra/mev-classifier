@@ -1,5 +1,5 @@
-mod server;
-mod routes;
 mod populator;
+mod routes;
+mod server;
 
 pub use server::*;

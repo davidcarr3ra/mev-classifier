@@ -1,7 +1,7 @@
 use classifier_core::ClassifiableTransaction;
 use macros::declare_anchor_actions;
 
-use crate::{ActionTrait, DexSwap};
+use crate::{ActionNodeId, ActionTrait, ActionTree, DexSwap};
 
 declare_anchor_actions!(
     jupiter_v6,
@@ -49,6 +49,8 @@ impl ActionTrait for JupiterV6Action {
     fn into_dex_swap(
         &self,
         txn: &ClassifiableTransaction,
+        _action_id: ActionNodeId,
+        _tree: &ActionTree,
     ) -> Result<Option<DexSwap>, anyhow::Error> {
         match self {
             JupiterV6Action::Route(route) => route.into_dex_swap(txn),
@@ -59,7 +61,10 @@ impl ActionTrait for JupiterV6Action {
 }
 
 impl jupiter_v6_actions::Route {
-    pub fn into_dex_swap(&self, txn: &ClassifiableTransaction) -> Result<Option<DexSwap>, anyhow::Error> {
+    pub fn into_dex_swap(
+        &self,
+        txn: &ClassifiableTransaction,
+    ) -> Result<Option<DexSwap>, anyhow::Error> {
         let input_mint = txn.get_mint_for_token_account(&self.user_source_token_account)?;
         let output_mint = txn.get_mint_for_token_account(&self.user_destination_token_account)?;
 
@@ -68,12 +73,17 @@ impl jupiter_v6_actions::Route {
             output_mint,
             input_token_account: self.user_source_token_account,
             output_token_account: self.user_destination_token_account,
+            input_amount: 0,
+            output_amount: 0,
         }))
     }
 }
 
 impl jupiter_v6_actions::RouteWithTokenLedger {
-    pub fn into_dex_swap(&self, txn: &ClassifiableTransaction) -> Result<Option<DexSwap>, anyhow::Error> {
+    pub fn into_dex_swap(
+        &self,
+        txn: &ClassifiableTransaction,
+    ) -> Result<Option<DexSwap>, anyhow::Error> {
         let input_mint = txn.get_mint_for_token_account(&self.user_source_token_account)?;
         let output_mint = txn.get_mint_for_token_account(&self.user_destination_token_account)?;
 
@@ -82,12 +92,17 @@ impl jupiter_v6_actions::RouteWithTokenLedger {
             output_mint,
             input_token_account: self.user_source_token_account,
             output_token_account: self.user_destination_token_account,
+            input_amount: 0,
+            output_amount: 0,
         }))
     }
 }
 
 impl jupiter_v6_actions::SharedAccountsRoute {
-    pub fn into_dex_swap(&self, txn: &ClassifiableTransaction) -> Result<Option<DexSwap>, anyhow::Error> {
+    pub fn into_dex_swap(
+        &self,
+        txn: &ClassifiableTransaction,
+    ) -> Result<Option<DexSwap>, anyhow::Error> {
         let input_mint = txn.get_mint_for_token_account(&self.program_source_token_account)?;
         let output_mint =
             txn.get_mint_for_token_account(&self.program_destination_token_account)?;
@@ -97,6 +112,8 @@ impl jupiter_v6_actions::SharedAccountsRoute {
             output_mint,
             input_token_account: self.source_token_account,
             output_token_account: self.destination_token_account,
+            input_amount: 0,
+            output_amount: 0,
         }))
     }
 }

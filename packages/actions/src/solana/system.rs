@@ -13,6 +13,17 @@ impl ActionTrait for ProgramInvocation {
     fn recurse_during_classify(&self) -> bool {
         true
     }
+
+    fn serializable(&self) -> bool {
+        true
+    }
+
+    fn to_json(&self) -> serde_json::Value {
+        serde_json::json!({
+            "type": "program_invocation",
+            "program_id": self.program_id.to_string(),
+        })
+    }
 }
 
 #[action]

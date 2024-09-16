@@ -1,9 +1,12 @@
 use std::{sync::Arc, time::Duration};
 
+use actions::serialize_block;
 use axum::{extract::Query, http::StatusCode, response::IntoResponse, Extension, Json};
 use futures::future;
 use serde::{Deserialize, Serialize};
 use tokio::{sync::oneshot, time::timeout};
+
+use crate::populator::FetchBlockRequest;
 
 use super::AppState;
 
@@ -15,7 +18,7 @@ pub struct ClassifyQuery {
 
 #[derive(Serialize)]
 struct ClassifySuccess {
-    successes: Vec<u64>,
+    blocks: Vec<serde_json::Value>,
     failures: Vec<u64>,
 }
 
@@ -52,12 +55,12 @@ pub async fn classify(
     // Create requests and receivers for each slot
     for slot in start_slot..start_slot + limit {
         let (tx, rx) = oneshot::channel();
-        requests.push((slot, tx));
+        requests.push(FetchBlockRequest { slot, response: tx });
         receivers.push(rx);
     }
 
     // Send requests to the central processing thread
-    if state.request_tx.send(requests).await.is_err() {
+    if state.user_request_tx.send(requests).await.is_err() {
         // 500 Internal Server Error
         return ClassifyResponse::Error(ClassifyError {
             message: "Internal server error".to_string(),
@@ -68,7 +71,7 @@ pub async fn classify(
 
     // Collect results from the receivers, applying a timeout
     // Prepare vectors to hold successes and failures
-    let mut successes = Vec::with_capacity(limit as usize);
+    let mut blocks = Vec::with_capacity(limit as usize);
     let mut failures = Vec::with_capacity(limit as usize);
 
     // Process the receivers and classify each slot as success or failure
@@ -76,17 +79,18 @@ pub async fn classify(
         let slot = start_slot + i as u64;
         async move {
             match timeout(timeout_duration, receiver).await {
-                Ok(Ok(_)) => Some((slot, true)), // success
-                _ => Some((slot, false)),        // failure
+                Ok(Ok(tree)) => Some((slot, tree)), // success
+                _ => Some((slot, None)),            // failure
             }
         }
     }))
     .await
     .into_iter()
     .filter_map(|result| result)
-    .for_each(|(slot, success)| {
-        if success {
-            successes.push(slot);
+    .for_each(|(slot, tree)| {
+        if let Some(tree) = tree {
+            let block_json = serialize_block(&tree, tree.root());
+            blocks.push(block_json);
         } else {
             failures.push(slot);
         }
@@ -94,7 +98,7 @@ pub async fn classify(
 
     // Return the results as JSON
     ClassifyResponse::Success(ClassifySuccess {
-        successes,
+        blocks,
         failures,
     })
 }

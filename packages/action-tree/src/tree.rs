@@ -1,19 +1,25 @@
-use actions::Action;
 use indextree::{Arena, Descendants, Node, NodeEdge, NodeId};
 
 mod display;
 
 pub type ActionNodeId = NodeId;
-pub type ActionNode = Node<Action>;
+pub type ActionNode<Action> = Node<Action>;
 pub type ActionNodeEdge = NodeEdge;
-pub type ActionDescendants<'a> = Descendants<'a, Action>;
+pub type ActionDescendants<'a, Action> = Descendants<'a, Action>;
 
-pub struct ActionTree {
+#[derive(Clone)]
+pub struct ActionTree<Action>
+where
+    Action: Clone,
+{
     arena: Arena<Action>,
     root_id: ActionNodeId,
 }
 
-impl ActionTree {
+impl<Action> ActionTree<Action>
+where
+    Action: Clone,
+{
     pub fn new(root: Action) -> Self {
         let mut arena = Arena::new();
 
@@ -26,11 +32,11 @@ impl ActionTree {
         self.root_id
     }
 
-    pub fn get(&self, node_id: ActionNodeId) -> Option<&ActionNode> {
+    pub fn get(&self, node_id: ActionNodeId) -> Option<&ActionNode<Action>> {
         self.arena.get(node_id)
     }
 
-    pub fn get_mut(&mut self, node_id: ActionNodeId) -> Option<&mut ActionNode> {
+    pub fn get_mut(&mut self, node_id: ActionNodeId) -> Option<&mut ActionNode<Action>> {
         self.arena.get_mut(node_id)
     }
 
@@ -117,7 +123,7 @@ impl ActionTree {
         parent.children(&self.arena).count()
     }
 
-    pub fn descendants<'a>(&'a self, parent: ActionNodeId) -> ActionDescendants {
+    pub fn descendants<'a>(&'a self, parent: ActionNodeId) -> ActionDescendants<Action> {
         parent.descendants(&self.arena)
     }
 
