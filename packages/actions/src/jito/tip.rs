@@ -34,4 +34,16 @@ impl ActionTrait for JitoTip {
     fn recurse_during_classify(&self) -> bool {
         false
     }
+
+    fn serializable(&self) -> bool {
+        true
+    }
+
+    fn to_json(&self) -> serde_json::Value {
+        serde_json::json!({
+            "type": "jitoTip",
+            "tipper": self.tipper.to_string(),
+            "tipAmount": self.tip_amount,
+        })
+    }
 }

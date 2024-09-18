@@ -12,6 +12,7 @@ use super::AppState;
 
 #[derive(Deserialize)]
 pub struct ClassifyQuery {
+    #[serde(rename = "startSlot")]
     pub start_slot: u64,
     pub limit: u64,
 }
@@ -97,8 +98,5 @@ pub async fn classify(
     });
 
     // Return the results as JSON
-    ClassifyResponse::Success(ClassifySuccess {
-        blocks,
-        failures,
-    })
+    ClassifyResponse::Success(ClassifySuccess { blocks, failures })
 }

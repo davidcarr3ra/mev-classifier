@@ -9,6 +9,7 @@ use inspection::database::mongo_client::{
 };
 use solana_client::nonblocking::rpc_client::RpcClient;
 use thiserror::Error;
+use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 
 use crate::{
     populator::{BlockClassifier, BlockRequester, BlockRequesterConfig},
@@ -93,11 +94,17 @@ impl TimeMachineServer {
 
         let block_populator = BlockClassifier::new(classifier_rx, classify_result_tx);
 
+        let cors = CorsLayer::new()
+            .allow_origin(AllowOrigin::any()) // Allow frontend
+            .allow_methods(Any) // Allow all methods (GET, POST, etc.)
+            .allow_headers(Any);
+
         // Setup routes
         let classify_state = Arc::new(AppState { user_request_tx });
         let app = Router::new()
             .route("/classify", get(classify))
-            .layer(Extension(classify_state));
+            .layer(Extension(classify_state))
+            .layer(cors);
 
         // Start server
         let tcp_listener = tokio::net::TcpListener::bind(&self.addr)

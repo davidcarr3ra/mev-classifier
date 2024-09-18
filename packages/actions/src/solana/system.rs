@@ -20,8 +20,8 @@ impl ActionTrait for ProgramInvocation {
 
     fn to_json(&self) -> serde_json::Value {
         serde_json::json!({
-            "type": "program_invocation",
-            "program_id": self.program_id.to_string(),
+            "type": "programInvocation",
+            "programId": self.program_id.to_string(),
         })
     }
 }

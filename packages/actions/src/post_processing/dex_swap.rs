@@ -41,4 +41,20 @@ impl ActionTrait for DexSwap {
     fn recurse_during_classify(&self) -> bool {
         unreachable!("DexSwap should not be classified");
     }
+
+    fn serializable(&self) -> bool {
+        true
+    }
+
+    fn to_json(&self) -> serde_json::Value {
+        serde_json::json!({
+            "type": "dexSwap",
+            "inputMint": self.input_mint.to_string(),
+            "outputMint": self.output_mint.to_string(),
+            "inputTokenAccount": self.input_token_account.to_string(),
+            "outputTokenAccount": self.output_token_account.to_string(),
+            "inputAmount": self.input_amount,
+            "outputAmount": self.output_amount,
+        })
+    }
 }

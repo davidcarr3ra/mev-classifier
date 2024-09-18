@@ -85,6 +85,7 @@ define_actions! {
 
     // 3rd party actions
     JitoTip,
+    BloxrouteTip,
     WhirlpoolsAction,
     JupiterV6Action,
     MeteoraDlmmAction,
@@ -96,5 +97,4 @@ define_actions! {
     // Post processing actions (labels)
     JitoBundle,
     DexSwap,
-    AtomicArbitrage,
 }

@@ -1,4 +1,5 @@
-use actions::{Action, ActionNodeId, ActionTree, AtomicArbitrage};
+use actions::{Action, ActionNodeId, ActionTree};
+use classifier_core::{AtomicArbitrageTag, TransactionTag};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -27,11 +28,16 @@ pub fn classify_atomic_arbitrage(root: ActionNodeId, tree: &mut ActionTree) {
             _ => continue,
         };
 
-        insertions.push((child_id, atomic_arbitrage));
+        insertions.push((child_id, TransactionTag::AtomicArbitrage(atomic_arbitrage)));
     }
 
-    for (txn_id, atomic_arbitrage) in insertions {
-        tree.insert_parent(txn_id, atomic_arbitrage.into());
+    for (child_id, tag) in insertions {
+        match tree.get_mut(child_id).unwrap().get_mut() {
+            Action::ClassifiableTransaction(txn) => {
+                txn.tags.push(tag);
+            }
+            _ => unreachable!(),
+        }
     }
 }
 
@@ -41,27 +47,16 @@ pub fn classify_atomic_arbitrage(root: ActionNodeId, tree: &mut ActionTree) {
 fn try_find_atomic_arb(
     tree: &ActionTree,
     txn_id: ActionNodeId,
-) -> Result<Option<AtomicArbitrage>, ClassifyAtomicArbitrageError> {
+) -> Result<Option<AtomicArbitrageTag>, ClassifyAtomicArbitrageError> {
     let mut first_swap = None;
     let mut last_swap = None;
 
-    // let mut parent_stack = vec![txn_id];
-
     for child in tree.descendants(txn_id) {
         let action_node = tree.get(child).unwrap();
-        // let parent_id = action_node.parent().unwrap();
-        // if &parent_id != parent_stack.last().unwrap() {
-        //     parent_stack.push(parent_id);
-        // }
 
         let action = action_node.get();
 
         match action {
-            Action::ClassifiableTransaction(txn) => {
-                if txn.status.is_err() {
-                    return Ok(None);
-                }
-            }
             Action::DexSwap(swap) => {
                 if first_swap.is_none() {
                     first_swap = Some(swap);
@@ -81,17 +76,12 @@ fn try_find_atomic_arb(
     let last_swap = last_swap.unwrap();
 
     if first_swap.input_mint == last_swap.output_mint {
-        let profit_amount = if last_swap.output_amount > first_swap.input_amount {
-            last_swap.output_amount - first_swap.input_amount
-        } else {
-            // TODO: Classify failed arbitrage?
-            0
-        };
+        let profit_amount = last_swap.output_amount as i128 - first_swap.input_amount as i128;
 
-        return Ok(Some(AtomicArbitrage::new(
-            first_swap.input_mint,
+        return Ok(Some(AtomicArbitrageTag {
+            mint: first_swap.input_mint,
             profit_amount,
-        )));
+        }));
     }
 
     Ok(None)

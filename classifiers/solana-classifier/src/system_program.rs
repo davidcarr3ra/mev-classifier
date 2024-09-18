@@ -1,4 +1,6 @@
-use actions::{is_jito_tip_address, Action, JitoTip, NativeTransfer};
+use actions::{
+    is_bloxroute_tip_address, is_jito_tip_address, Action, BloxrouteTip, JitoTip, NativeTransfer,
+};
 use classifier_core::{ClassifiableInstruction, ClassifiableTransaction};
 use classifier_trait::{ClassifyInstructionResult, InstructionClassifier};
 use solana_sdk::{pubkey::Pubkey, system_instruction::SystemInstruction};
@@ -62,6 +64,8 @@ fn classify_transfer(
 
     if is_jito_tip_address(&recipient) {
         Ok(JitoTip::new(funding, lamports).into())
+    } else if is_bloxroute_tip_address(&recipient) {
+        Ok(BloxrouteTip::new(funding, lamports).into())
     } else {
         Ok(NativeTransfer::new(funding, recipient, lamports).into())
     }

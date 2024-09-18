@@ -10,7 +10,7 @@ use solana_transaction_status::{
     UiInnerInstructions, UiLoadedAddresses, UiTransactionStatusMeta, UiTransactionTokenBalance,
 };
 
-use super::instruction::ClassifiableInstruction;
+use super::{instruction::ClassifiableInstruction, TransactionTag};
 
 #[derive(Debug, Clone)]
 pub struct ClassifiableTransaction {
@@ -24,6 +24,9 @@ pub struct ClassifiableTransaction {
 
     static_keys: Vec<Pubkey>,
     loaded_addresses: Option<LoadedAddresses>,
+
+    // Label metadata
+    pub tags: Vec<TransactionTag>,
 }
 
 impl PartialEq for ClassifiableTransaction {
@@ -90,6 +93,7 @@ impl ClassifiableTransaction {
             post_token_balances: meta.post_token_balances.into(),
             fee: meta.fee,
             created_tokens: None,
+            tags: vec![],
         }
     }
 
@@ -219,7 +223,11 @@ impl ClassifiableTransaction {
             return Err(anyhow::anyhow!("No post token balances found"));
         }
 
-        tracing::trace!("Could not find post token balance for pubkey {:?}, {:?}", pubkey, self.signature);
+        tracing::trace!(
+            "Could not find post token balance for pubkey {:?}, {:?}",
+            pubkey,
+            self.signature
+        );
         Err(anyhow::anyhow!(
             "Could not find post token balance for pubkey {:?}",
             pubkey

@@ -19,6 +19,8 @@ impl ActionTrait for ClassifiableTransaction {
         serde_json::json!({
             "type": "transaction",
             "signature": self.signature.to_string(),
+            "failed": self.status.is_err(),
+            "tags": self.tags.iter().map(|tag| tag.to_json()).collect::<Vec<_>>(),
         })
     }
 }

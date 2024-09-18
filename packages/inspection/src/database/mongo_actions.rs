@@ -1,4 +1,4 @@
-use actions::{Action, AtomicArbitrage, Block, DexSwap};
+use actions::{Action, Block, DexSwap};
 use classifier_core::ClassifiableTransaction;
 use mongodb::bson;
 use solana_sdk::pubkey::Pubkey;
@@ -62,7 +62,6 @@ impl MongoSerialize for Action {
         match self {
             Action::Block(block) => block.metadata_bson(),
             Action::ClassifiableTransaction(tx) => tx.metadata_bson(),
-            Action::AtomicArbitrage(arbitrage) => arbitrage.metadata_bson(),
             Action::DexSwap(swap) => swap.metadata_bson(),
             _ => None,
         }
@@ -78,15 +77,6 @@ impl MongoSerialize for ClassifiableTransaction {
                 subtype: bson::spec::BinarySubtype::Generic,
                 bytes: bytes.to_vec(),
             },
-        })
-    }
-}
-
-impl MongoSerialize for AtomicArbitrage {
-    fn metadata_bson(&self) -> Option<bson::Document> {
-        Some(bson::doc! {
-            "type": "AtomicArbitrage",
-            "mint": pubkey_to_bson(&self.mint),
         })
     }
 }

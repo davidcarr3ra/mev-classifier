@@ -16,7 +16,11 @@ pub fn serialize_block(tree: &ActionTree, block_id: ActionNodeId) -> serde_json:
     // Stack to track JSON serialization
     let mut json_stack = vec![(block, value)];
 
+    let mut i = 0;
+
     for node_id in descendants {
+        i += 1;
+
         let node = tree.get(node_id).unwrap();
         let action = node.get();
 
@@ -37,7 +41,12 @@ pub fn serialize_block(tree: &ActionTree, block_id: ActionNodeId) -> serde_json:
         }
 
         if action.serializable() {
-            let node_json = action.to_json();
+            let mut node_json = action.to_json();
+            node_json
+                .as_object_mut()
+                .unwrap()
+                .insert("id".to_string(), serde_json::json!(i - 1));
+
             json_stack.push((node_id, node_json));
         } else {
             // Skip all children of non-serializable nodes
@@ -45,7 +54,7 @@ pub fn serialize_block(tree: &ActionTree, block_id: ActionNodeId) -> serde_json:
         }
     }
 
-    if json_stack.len() == 2 {
+    while json_stack.len() > 1 {
         consolidate_json_values(&mut json_stack);
     }
 

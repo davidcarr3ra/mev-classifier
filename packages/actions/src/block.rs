@@ -43,6 +43,7 @@ impl ActionTrait for Block {
 
     fn to_json(&self) -> serde_json::Value {
         serde_json::json!({
+            "type": "block",
             "slot": self.slot,
             "parent_slot": self.parent_slot,
             "block_time": self.block_time,
