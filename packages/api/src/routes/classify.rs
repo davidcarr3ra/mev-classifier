@@ -6,6 +6,8 @@ use futures::future;
 use serde::{Deserialize, Serialize};
 use tokio::{sync::oneshot, time::timeout};
 
+use inspection::database::document_builder;
+
 use crate::populator::FetchBlockRequest;
 
 use super::AppState;
@@ -21,6 +23,7 @@ pub struct ClassifyQuery {
 struct ClassifySuccess {
     blocks: Vec<serde_json::Value>,
     failures: Vec<u64>,
+    db_failures: Vec<u64>,
 }
 
 #[derive(Serialize)]
@@ -74,6 +77,10 @@ pub async fn classify(
     // Prepare vectors to hold successes and failures
     let mut blocks = Vec::with_capacity(limit as usize);
     let mut failures = Vec::with_capacity(limit as usize);
+    let mut db_failures = Vec::with_capacity(limit as usize);
+
+    // Prepare vectors to hold Block Documents
+    let mut block_documents_collection = Vec::with_capacity(limit as usize);
 
     // Process the receivers and classify each slot as success or failure
     let _ = future::join_all(receivers.into_iter().enumerate().map(|(i, receiver)| {
@@ -92,11 +99,29 @@ pub async fn classify(
         if let Some(tree) = tree {
             let block_json = serialize_block(&tree, tree.root());
             blocks.push(block_json);
+
+            let _ = match document_builder::build_block_documents(&tree, tree.root()) {
+                Ok(doc) => {
+                    block_documents_collection.push(doc);
+                },
+                Err(_) => {
+                    db_failures.push(slot);
+                }
+            };
+            
         } else {
             failures.push(slot);
         }
     });
-
+    
+    if let Err(e) = state.mongo_client.write_batch_block_documents(block_documents_collection).await {
+        return ClassifyResponse::Error(ClassifyError {
+            message: format!("Failed to write block documents: {}", e)
+        });
+    }
+    
+    
     // Return the results as JSON
-    ClassifyResponse::Success(ClassifySuccess { blocks, failures })
+    ClassifyResponse::Success(ClassifySuccess { blocks, failures, db_failures})
+
 }

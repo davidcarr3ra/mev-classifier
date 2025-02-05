@@ -100,7 +100,7 @@ impl TimeMachineServer {
             .allow_headers(Any);
 
         // Setup routes
-        let classify_state = Arc::new(AppState { user_request_tx });
+        let classify_state = Arc::new(AppState { user_request_tx, mongo_client: self._mongo_client.clone() });
         let app = Router::new()
             .route("/classify", get(classify))
             .layer(Extension(classify_state))

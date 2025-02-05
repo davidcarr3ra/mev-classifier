@@ -135,4 +135,79 @@ impl MongoDBClient {
             }
         }
     }
+
+    pub async fn write_batch_block_documents(&self, batch: Vec<BlockDocuments>) -> Result<()> {
+        let timestamp = Instant::now();
+        tracing::trace!("Writing batch of {} blocks to MongoDB", batch.len());
+
+        let mut session = self.client.start_session().await?;
+        let txn_options = TransactionOptions::builder()
+            .write_concern(WriteConcern::majority())
+            .build();
+
+        session.start_transaction().with_options(txn_options).await?;
+
+        let db = self.client.database(&self.database_name);
+        let blocks_collection: Collection<Document> = db.collection("blocks");
+
+        for block_docs in batch {
+            let block_id = block_docs.block.get("_id").unwrap().clone();
+            let block_filter = doc! { "_id": block_id.clone() };
+            
+            // Upsert block document
+            blocks_collection
+                .replace_one(block_filter, block_docs.block)
+                .upsert(true)
+                .session(&mut session)
+                .await?;
+
+            // Process transactions
+            if !block_docs.transactions.is_empty() {
+                let transactions_collection = db.collection("transactions");
+                
+                transactions_collection
+                    .delete_many(doc! { "block_id": block_id.clone() })
+                    .session(&mut session)
+                    .await?;
+
+                transactions_collection
+                    .insert_many(block_docs.transactions)
+                    .session(&mut session)
+                    .await?;
+            }
+
+            // Process metadata
+            if !block_docs.block_metadata.is_empty() {
+                let metadata_collection = db.collection("block_metadata");
+                
+                metadata_collection
+                    .delete_many(doc! { "block_id": block_id.clone() })
+                    .session(&mut session)
+                    .await?;
+
+                metadata_collection
+                    .insert_many(block_docs.block_metadata)
+                    .session(&mut session)
+                    .await?;
+            }
+        }
+
+        // Commit transaction with retry logic
+        loop {
+            match session.commit_transaction().await {
+                Ok(_) => {
+                    tracing::trace!("Batch transaction committed in {:?}", timestamp.elapsed());
+                    return Ok(());
+                }
+                Err(err) if err.contains_label(UNKNOWN_TRANSACTION_COMMIT_RESULT) => {
+                    tracing::warn!("Retrying transaction commit");
+                    continue;
+                }
+                Err(err) => {
+                    tracing::error!("Failed to commit batch transaction: {:?}", err);
+                    return Err(err);
+                }
+            }
+        }
+    }
 }
