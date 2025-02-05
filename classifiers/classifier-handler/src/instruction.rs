@@ -48,9 +48,6 @@ pub fn classify_instruction(
     let program_id = txn
         .get_pubkey(ix.program_id_index)
         .ok_or_else(|| ClassifyInstructionError::MissingProgramId)?;
-		
-		print!("Program ID: {}\n", program_id);
-		print!("INSTRUCTION: {:?}\n", ix);
 
     let action_result = classify_instruction_matcher!(
         program_id,
