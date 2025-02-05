@@ -17,16 +17,16 @@ pub fn classify_sandwich_attack(root: ActionNodeId, tree: &mut ActionTree) {
 
     // Collect all DEX swaps and group them by token pair
     for txn_id in tree.descendants(root) {
-			if let Action::ClassifiableTransaction(_) = tree.get(txn_id).unwrap().get() {
-				for child_id in tree.descendants(txn_id) {
-					if let Action::DexSwap(swap) = tree.get(child_id).unwrap().get() {
-						let mut token_pair_vec = vec![swap.input_mint.to_string(), swap.output_mint.to_string()];
-						token_pair_vec.sort_unstable();
-						let token_pair = token_pair_vec.join("-");
-						token_pair_groups.entry(token_pair).or_default().push((txn_id, swap));
-					}
-				}
-			}
+        if let Action::ClassifiableTransaction(_) = tree.get(txn_id).unwrap().get() {
+            for child_id in tree.descendants(txn_id) {
+                if let Action::DexSwap(swap) = tree.get(child_id).unwrap().get() {
+                    let mut token_pair_vec = vec![swap.input_mint.to_string(), swap.output_mint.to_string()];
+                    token_pair_vec.sort_unstable();
+                    let token_pair = token_pair_vec.join("-");
+                    token_pair_groups.entry(token_pair).or_default().push((txn_id, swap));
+                }
+            }
+        }
     }
 
     // Identify sandwich patterns within each token pair group
