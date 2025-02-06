@@ -43,44 +43,49 @@ pub fn classify_sandwich_attack(root: ActionNodeId, tree: &mut ActionTree) {
             let (back_id, back_tx) = token_pair_vec[i+2];
 
             // Verify the sandwich pattern:
-            // Front and victim buy token A with token B, back sells token A for token B
-            if front_tx.input_mint == victim_tx.input_mint
+            if front_tx.input_token_account == back_tx.input_token_account // Same attacker
+								&& front_tx.input_token_account != victim_tx.input_token_account // Attacker != Victim
+								&& front_tx.input_mint == victim_tx.input_mint
                 && front_tx.output_mint == victim_tx.output_mint
                 && back_tx.input_mint == front_tx.output_mint
                 && back_tx.output_mint == front_tx.input_mint
             {
-                // Calculate profit in terms of the input token
-                let profit = (back_tx.output_amount as i128 - front_tx.input_amount as i128) as i64;
+							// Calculate profit in terms of the input token
+							let profit = (back_tx.output_amount as i128 - front_tx.input_amount as i128) as i64;
 
-                // Append tags
-                insertions.push((
-                    front_id,
-                    TransactionTag::SandwichAttack(SandwichAttackTag::Frontrun {
-                        token_bought: front_tx.output_mint,
-                        amount: front_tx.output_amount,
-                        attacker_pubkey: front_tx.input_token_account,
-                    }),
-                ));
-                insertions.push((
-                    victim_id,
-                    TransactionTag::SandwichAttack(SandwichAttackTag::Victim {
-                        token_bought: victim_tx.output_mint,
-                        amount: victim_tx.output_amount,
-                        victim_pubkey: victim_tx.input_token_account,
-                    }),
-                ));
-                insertions.push((
-                    back_id,
-                    TransactionTag::SandwichAttack(SandwichAttackTag::Backrun {
-                        token_sold: back_tx.input_mint,
-                        amount: back_tx.input_amount,
-                        attacker_pubkey: back_tx.output_token_account,
-                        profit_amount: profit,
-                    }),
-                ));
+							if profit > 0 {
+								// Append tags
+								insertions.push((
+									front_id,
+									TransactionTag::SandwichAttack(SandwichAttackTag::Frontrun {
+											token_bought: front_tx.output_mint,
+											amount: front_tx.output_amount,
+											attacker_pubkey: front_tx.input_token_account,
+									}),
+								));
+								insertions.push((
+									victim_id,
+									TransactionTag::SandwichAttack(SandwichAttackTag::Victim {
+											token_bought: victim_tx.output_mint,
+											amount: victim_tx.output_amount,
+											victim_pubkey: victim_tx.input_token_account,
+									}),
+								));
+								insertions.push((
+									back_id,
+									TransactionTag::SandwichAttack(SandwichAttackTag::Backrun {
+											token_sold: back_tx.input_mint,
+											amount: back_tx.input_amount,
+											attacker_pubkey: back_tx.output_token_account,
+											profit_amount: profit,
+									}),
+								));
+							}
             }
         }
     }
+
+		// println!("INSERTIONS: {:?}", insertions);
 
     for (child_id, tag) in insertions {
         if let Some(node) = tree.get_mut(child_id) {
