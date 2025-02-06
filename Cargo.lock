@@ -2470,11 +2470,14 @@ name = "inspection"
 version = "0.1.0"
 dependencies = [
  "actions",
+ "anyhow",
  "base58",
  "classifier-core",
+ "classifier-handler",
  "mongodb",
  "reqwest",
  "serde",
+ "solana-client",
  "solana-sdk",
  "solana-transaction-status",
  "spl-token",
