@@ -23,7 +23,7 @@ pub enum Command {
 
 pub fn entry(cli: CLI) {
     match cli.command {
-        Command::Inspect { args } => processor::inspect::entry(args),
+        Command::Inspect { args } => entry_async(processor::inspect::entry(args)),
         Command::Serve { args } => entry_async(processor::serve::entry(args)),
     }
 }

@@ -16,3 +16,5 @@ classifier-handler = { version = "0.1.0", path = "../../classifiers/classifier-h
 action-tree = { version = "0.1.0", path = "../action-tree" }
 tokio = "1.40.0"
 time-machine-api = { version = "0.1.0", path = "../api" }
+retry = "2.0.0"
+futures = "0.3.31"
