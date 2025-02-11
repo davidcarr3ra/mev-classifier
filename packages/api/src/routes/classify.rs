@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use actions::serialize_block;
+use actions::{serialize_block, serialize_block_flat};
 use axum::{extract::Query, http::StatusCode, response::IntoResponse, Extension, Json};
 use futures::future;
 use serde::{Deserialize, Serialize};
@@ -18,9 +18,11 @@ pub struct ClassifyQuery {
 }
 
 #[derive(Serialize)]
+#[serde(transparent)]
 struct ClassifySuccess {
-    blocks: Vec<serde_json::Value>,
-    failures: Vec<u64>,
+    // blocks: Vec<serde_json::Value>,
+    flat_blocks: Vec<serde_json::Value>,
+    // failures: Vec<u64>,
 }
 
 #[derive(Serialize)]
@@ -73,6 +75,7 @@ pub async fn classify(
     // Collect results from the receivers, applying a timeout
     // Prepare vectors to hold successes and failures
     let mut blocks = Vec::with_capacity(limit as usize);
+    let mut flat_blocks = Vec::with_capacity(limit as usize);
     let mut failures = Vec::with_capacity(limit as usize);
 
     // Process the receivers and classify each slot as success or failure
@@ -91,12 +94,15 @@ pub async fn classify(
     .for_each(|(slot, tree)| {
         if let Some(tree) = tree {
             let block_json = serialize_block(&tree, tree.root());
+            let flat_json = serialize_block_flat(&tree, tree.root());
             blocks.push(block_json);
+            flat_blocks.push(flat_json);
         } else {
             failures.push(slot);
         }
     });
 
     // Return the results as JSON
-    ClassifyResponse::Success(ClassifySuccess { blocks, failures })
+    // ClassifyResponse::Success(ClassifySuccess { blocks, flat_blocks, failures })
+    ClassifyResponse::Success(ClassifySuccess { flat_blocks })
 }
