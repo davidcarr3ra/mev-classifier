@@ -51,11 +51,13 @@ pub fn entry(args: InspectArgs) {
         }
     };
 
-    println!(
-        "Inspecting {} transactions from slot {}",
-        block.transactions.as_ref().unwrap().len(),
-        args.slot
-    );
+    if args.filter_transaction.is_none() {
+        println!(
+            "Inspecting {} transactions from slot {}",
+            block.transactions.as_ref().unwrap().len(),
+            args.slot
+        );
+    }
 
     let mut tree = match classify_block(args.slot, block, args.filter_transaction) {
         Ok(tree) => tree,
@@ -64,6 +66,8 @@ pub fn entry(args: InspectArgs) {
             return;
         }
     };
+
+		// println!("TREE: \n {}", tree);
 
     let block_id = tree.root();
 

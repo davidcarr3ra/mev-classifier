@@ -23,17 +23,17 @@ impl DexSwap {
         action_id: ActionNodeId,
         tree: &ActionTree,
     ) -> Option<Self> {
-        match action.into_dex_swap(txn, action_id, tree) {
-            Ok(dex_swap) => dex_swap,
-            Err(e) => {
-                tracing::error!(
-                    "Failed to convert action into DexSwap: {:?}, signature: {:?}",
-                    e,
-                    txn.signature
-                );
-                None
-            }
-        }
+			match action.into_dex_swap(txn, action_id, tree) {
+					Ok(dex_swap) => dex_swap,
+					Err(e) => {
+							tracing::error!(
+									"Failed to convert action into DexSwap: {:?}, signature: {:?}",
+									e,
+									txn.signature
+							);
+							None
+					}
+			}
     }
 }
 
