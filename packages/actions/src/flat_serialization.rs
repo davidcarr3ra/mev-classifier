@@ -89,7 +89,7 @@ pub fn flatten_children(
 }
 
 
-pub fn serialize_block_flat(tree: &ActionTree, block_id: ActionNodeId) ->  serde_json::Value {
+pub fn serialize_block_flat(tree: &ActionTree, block_id: ActionNodeId, epoch: u64) ->  serde_json::Value {
     // First, serialize the block to the nested JSON using your existing logic.
     let nested_json: Value = serialize_block(tree, block_id);
 
@@ -100,7 +100,6 @@ pub fn serialize_block_flat(tree: &ActionTree, block_id: ActionNodeId) ->  serde
     let total_base_fees = nested_json.get("total_base_fees").cloned();
     let total_priority_fees = nested_json.get("total_priority_fees").cloned();
     let total_tips = nested_json.get("total_tips").cloned();
-
 
     let mut transactions_json = Vec::new();
 
@@ -137,6 +136,7 @@ pub fn serialize_block_flat(tree: &ActionTree, block_id: ActionNodeId) ->  serde
     // Create the final block JSON object.
     let block_obj = json!({
         "type": "block",
+        "epoch": epoch,
         "slot": block_slot,
         "parent_slot": parent_slot,
         "block_time": block_time,

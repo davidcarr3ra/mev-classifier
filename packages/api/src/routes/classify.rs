@@ -18,11 +18,10 @@ pub struct ClassifyQuery {
 }
 
 #[derive(Serialize)]
-#[serde(transparent)]
 struct ClassifySuccess {
-    // blocks: Vec<serde_json::Value>,
+    blocks: Vec<serde_json::Value>,
     flat_blocks: Vec<serde_json::Value>,
-    // failures: Vec<u64>,
+    failures: Vec<u64>,
 }
 
 #[derive(Serialize)]
@@ -94,7 +93,7 @@ pub async fn classify(
     .for_each(|(slot, tree)| {
         if let Some(tree) = tree {
             let block_json = serialize_block(&tree, tree.root());
-            let flat_json = serialize_block_flat(&tree, tree.root());
+            let flat_json = serialize_block_flat(&tree, tree.root(), 1);
             blocks.push(block_json);
             flat_blocks.push(flat_json);
         } else {
@@ -103,6 +102,5 @@ pub async fn classify(
     });
 
     // Return the results as JSON
-    // ClassifyResponse::Success(ClassifySuccess { blocks, flat_blocks, failures })
-    ClassifyResponse::Success(ClassifySuccess { flat_blocks })
+    ClassifyResponse::Success(ClassifySuccess { blocks, flat_blocks, failures })
 }

@@ -1,9 +1,11 @@
 use clap::Args;
 use classifier_handler::classify_block;
-use inspection::database::mongo_client::{MongoDBClient, MongoDBClientConfig, MongoDBStage};
+// use inspection::database::mongo_client::{MongoDBClient, MongoDBClientConfig, MongoDBStage};
 use inspection::filtering::{post_process, PostProcessConfig};
-use inspection::{database, label_tree};
+// use inspection::{database, label_tree};
+use inspection::{label_tree};
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcBlockConfig};
+use solana_program::epoch_schedule::EpochSchedule as ProgramEpochSchedule;
 use solana_transaction_status::{TransactionDetails, UiTransactionEncoding};
 use std::fs::{self, File};
 use std::io::Write;
@@ -14,6 +16,10 @@ use futures::stream::{self, StreamExt};
 use tokio::task;
 use std::sync::Arc;
 
+use reqwest::Client;
+use actions::serialize_block_flat;
+use serde_json::Value;
+use urlencoding::encode;
 
 #[derive(Args, Debug, Clone)]
 pub struct InspectArgs {
@@ -38,6 +44,15 @@ pub struct InspectArgs {
 
     #[clap(long, help = "MongoDB URI to use for writing data.")]
     mongo_uri: Option<String>,
+
+    #[clap(long, help = "ClickHouse URI to use for writing data.")]
+    clickhouse_uri: Option<String>,
+
+    #[clap(long, help = "ClickHouse username to use for writing data.")]
+    clickhouse_username: Option<String>,
+
+    #[clap(long, help = "ClickHouse password to use for writing data.")]
+    clickhouse_password: Option<String>,
 }
 
 struct Inspector {
@@ -51,94 +66,240 @@ impl Inspector {
 			Self { rpc_client, args }
 	}
 
-	fn process_slot_with_retry(&self, slot: u64) {
-		let block = match retryable_request(|| {
-			self.rpc_client.get_block_with_config(
-				slot,
-				RpcBlockConfig {
-						max_supported_transaction_version: Some(0),
-						encoding: Some(UiTransactionEncoding::Base64),
-						transaction_details: Some(TransactionDetails::Full),
-						..Default::default()
-				},
-			)
-		}) {
-			Ok(block) => {
-				println!("Processed slot {}.", slot);
-				block
-			},
-			Err(e) => {
-				eprintln!("Failed to process slot {} after retries: {:?}", slot, e);
-				return;
-			}
-		};
+    /// Asynchronously uploads a single block (in JSONEachRow format) to ClickHouse.
+    async fn upload_block_to_clickhouse(clickhouse_url: &str, username: &str, password: &str, block: Value) -> Result<(), Box<dyn std::error::Error>> {
+        // The ClickHouse query to insert one row using JSONEachRow format.
+        let query = "INSERT INTO default.time_machine_v0 FORMAT JSONEachRow";
+        // Build the full URL by URL-encoding the query.
+        let full_url = format!("{}?query={}", clickhouse_url, encode(query));
 
-		println!(
-				"Inspecting {} transactions from slot {}",
-				block.transactions.as_ref().unwrap().len(),
-				slot
-		);
+        let client = Client::new();
+        // Convert the block to a JSON string.
+        let body = block.to_string();
 
-		let mut tree = match classify_block(slot, block, self.args.filter_transaction.clone()) {
-				Ok(tree) => tree,
-				Err(err) => {
-						eprintln!("Failed to classify block: {:?}", err);
-						return;
-				}
-		};
+        let response = client
+            .post(&full_url)
+            .basic_auth(username, Some(password))
+            .header("Content-Type", "application/json")
+            .body(body)
+            .send()
+            .await?;
 
-		let block_id = tree.root();
+        if response.status().is_success() {
+            println!("Successfully uploaded block to ClickHouse.");
+            Ok(())
+        } else {
+            Err(format!("ClickHouse insertion failed: HTTP {}", response.status()).into())
+        }
+    }
 
-		label_tree(&mut tree);
+    /// Process a slot, classify its block, serialize it as a flattened JSON, and upload it to ClickHouse.
+    pub async fn process_slot_with_retry_clickhouse(self, slot: u64, epoch: Option<u64>) {
+        // Retrieve the block with retries.
+        println!("Processing slot {} with retry into clickhouse.", slot);
+        let block = match retryable_request(|| {
+            self.rpc_client.get_block_with_config(
+                slot,
+                RpcBlockConfig {
+                    max_supported_transaction_version: Some(0),
+                    encoding: Some(UiTransactionEncoding::Base64),
+                    transaction_details: Some(TransactionDetails::Full),
+                    ..Default::default()
+                },
+            )
+        }) {
+            Ok(block) => {
+                println!("Processed slot {}.", slot);
+                block
+            },
+            Err(e) => {
+                eprintln!("Failed to process slot {} after retries: {:?}", slot, e);
+                return;
+            }
+        };
 
-		post_process(
-				PostProcessConfig {
-						retain_votes: false,
-						remove_empty_transactions: true,
-						cluster_jito_bundles: true,
-				},
-				&mut tree,
-		);
+        // Determine the epoch: use the provided one, or infer it if None.
+        let epoch = match epoch {
+            Some(e) => e,
+            None => {
+                let schedule = match retryable_request(|| self.rpc_client.get_epoch_schedule()) {
+                    Ok(schedule) => {
+                        println!("Retrieved epoch schedule for slot {}.", slot);
+                        schedule
+                    },
+                    Err(e) => {
+                        eprintln!("Failed to retrieve epoch schedule for slot {} after retries: {:?}", slot, e);
+                        return;
+                    }
+                };
+                let inferred_epoch = Self::infer_epoch_from_slot(slot, &schedule);
+                println!("Inferred epoch {} for slot {}.", inferred_epoch, slot);
+                inferred_epoch
+            }
+        };
 
-		let block_documents = match database::document_builder::build_block_documents(&tree, block_id) {
-				Ok(doc) => doc,
-				Err(err) => {
-						eprintln!("Failed to build block documents: {:?}", err);
-						return;
-				}
-		};
+        println!(
+            "Inspecting {} transactions from slot {} (epoch {})",
+            block.transactions.as_ref().unwrap().len(),
+            slot,
+            epoch
+        );
 
-		// Write block to beta DB (Should not be writing to prod with this CLI tool)
-		if let Some(mongo_uri) = &self.args.mongo_uri {
-				let rt = tokio::runtime::Runtime::new().unwrap();
+        let mut tree = match classify_block(slot, block, self.args.filter_transaction.clone()) {
+            Ok(tree) => tree,
+            Err(err) => {
+                eprintln!("Failed to classify block: {:?}", err);
+                return;
+            }
+        };
 
-				rt.block_on(async {
-						let client = match MongoDBClient::new(MongoDBClientConfig {
-								uri: mongo_uri.clone(),
-								stage: MongoDBStage::Beta,
-						})
-						.await
-						{
-								Ok(client) => client,
-								Err(err) => {
-										eprintln!("Failed to create MongoDB client: {:?}", err);
-										return;
-								}
-						};
+        let block_id = tree.root();
 
-						match client.write_block_documents(block_documents).await {
-								Ok(_) => {}
-								Err(err) => {
-										eprintln!("Failed to write block documents: {:?}", err);
-								}
-						}
-				});
-		}
+        label_tree(&mut tree);
 
-		if self.args.write_tree && tree.num_children(block_id) > 0 {
-				self.write_tree_results(&tree);
-		}
-	}
+        post_process(
+            PostProcessConfig {
+                retain_votes: false,
+                remove_empty_transactions: true,
+                cluster_jito_bundles: true,
+            },
+            &mut tree,
+        );
+
+        // Serialize the block into a flat JSON structure.
+        let flattened_block: Value = serialize_block_flat(&tree, block_id, epoch);
+        
+        // If a ClickHouse URI is provided, upload the flattened block.
+        if let Some(clickhouse_uri) = &self.args.clickhouse_uri {
+            // Create a new Tokio runtime.
+            let username = &self.args.clickhouse_username.as_deref().expect("ClickHouse username must be set");
+            let password = &self.args.clickhouse_password.as_deref().expect("ClickHouse password must be set");
+            
+            match Self::upload_block_to_clickhouse(clickhouse_uri, username, password, flattened_block).await {
+                    Ok(_) => println!("Uploaded slot {} to ClickHouse.", slot),
+                    Err(err) => eprintln!("Failed to upload slot {} to ClickHouse: {:?}", slot, err),
+            }
+        };
+
+        // Optionally, if writing the tree results is enabled.
+        if self.args.write_tree && tree.num_children(block_id) > 0 {
+            self.write_tree_results(&tree);
+        }
+    }
+
+    /// Helper function to infer the epoch for a given slot from the epoch schedule.
+    fn infer_epoch_from_slot(slot: u64, schedule: &ProgramEpochSchedule) -> u64 {
+        // If warmup is enabled and the slot is before the first normal slot, calculate using the warmup epochs.
+        if schedule.warmup && slot < schedule.first_normal_slot {
+            let mut epoch = 0;
+            let mut epoch_start = 0;
+            loop {
+                let epoch_length = if epoch < schedule.first_normal_epoch {
+                    // In warmup, each epoch length grows (typically doubling) until first_normal_epoch.
+                    schedule.first_normal_slot >> (schedule.first_normal_epoch - epoch)
+                } else {
+                    schedule.slots_per_epoch
+                };
+                if epoch_start + epoch_length > slot {
+                    break epoch;
+                }
+                epoch_start += epoch_length;
+                epoch += 1;
+            }
+        } else {
+            // For slots after warmup, use the standard formula.
+            schedule.first_normal_epoch + ((slot - schedule.first_normal_slot) / schedule.slots_per_epoch)
+        }
+    }
+
+	// fn process_slot_with_retry(&self, slot: u64) {
+	// 	let block = match retryable_request(|| {
+	// 		self.rpc_client.get_block_with_config(
+	// 			slot,
+	// 			RpcBlockConfig {
+	// 					max_supported_transaction_version: Some(0),
+	// 					encoding: Some(UiTransactionEncoding::Base64),
+	// 					transaction_details: Some(TransactionDetails::Full),
+	// 					..Default::default()
+	// 			},
+	// 		)
+	// 	}) {
+	// 		Ok(block) => {
+	// 			println!("Processed slot {}.", slot);
+	// 			block
+	// 		},
+	// 		Err(e) => {
+	// 			eprintln!("Failed to process slot {} after retries: {:?}", slot, e);
+	// 			return;
+	// 		}
+	// 	};
+
+	// 	println!(
+	// 			"Inspecting {} transactions from slot {}",
+	// 			block.transactions.as_ref().unwrap().len(),
+	// 			slot
+	// 	);
+
+	// 	let mut tree = match classify_block(slot, block, self.args.filter_transaction.clone()) {
+	// 			Ok(tree) => tree,
+	// 			Err(err) => {
+	// 					eprintln!("Failed to classify block: {:?}", err);
+	// 					return;
+	// 			}
+	// 	};
+
+	// 	let block_id = tree.root();
+
+	// 	label_tree(&mut tree);
+
+	// 	post_process(
+	// 			PostProcessConfig {
+	// 					retain_votes: false,
+	// 					remove_empty_transactions: true,
+	// 					cluster_jito_bundles: true,
+	// 			},
+	// 			&mut tree,
+	// 	);
+
+	// 	let block_documents = match database::document_builder::build_block_documents(&tree, block_id) {
+	// 			Ok(doc) => doc,
+	// 			Err(err) => {
+	// 					eprintln!("Failed to build block documents: {:?}", err);
+	// 					return;
+	// 			}
+	// 	};
+
+	// 	// Write block to beta DB (Should not be writing to prod with this CLI tool)
+	// 	if let Some(mongo_uri) = &self.args.mongo_uri {
+	// 			let rt = tokio::runtime::Runtime::new().unwrap();
+
+	// 			rt.block_on(async {
+	// 					let client = match MongoDBClient::new(MongoDBClientConfig {
+	// 							uri: mongo_uri.clone(),
+	// 							stage: MongoDBStage::Beta,
+	// 					})
+	// 					.await
+	// 					{
+	// 							Ok(client) => client,
+	// 							Err(err) => {
+	// 									eprintln!("Failed to create MongoDB client: {:?}", err);
+	// 									return;
+	// 							}
+	// 					};
+
+	// 					match client.write_block_documents(block_documents).await {
+	// 							Ok(_) => {}
+	// 							Err(err) => {
+	// 									eprintln!("Failed to write block documents: {:?}", err);
+	// 							}
+	// 					}
+	// 			});
+	// 	}
+
+	// 	if self.args.write_tree && tree.num_children(block_id) > 0 {
+	// 			self.write_tree_results(&tree);
+	// 	}
+	// }
 
 	async fn process_epoch_async(&self, epoch: u64) {
 		let epoch_schedule = match self.rpc_client.get_epoch_schedule() {
@@ -155,7 +316,7 @@ impl Inspector {
 		println!("Processing epoch {} (slots {} to {})", epoch, first_slot, last_slot);
 
 		// Process each slot concurrently. Each slot is processed via a blocking task that runs
-    // our retryable slot processing function.
+        // our retryable slot processing function.
 		// Wrap the args in an Arc instead of cloning
 		let args = Arc::new(self.args.clone());
 
@@ -170,8 +331,11 @@ impl Inspector {
 						rpc_url: (*args).rpc_url.clone(),
 						mongo_uri: (*args).mongo_uri.clone(),
 						epoch: None,
+                        clickhouse_uri: (*args).clickhouse_uri.clone(),
+                        clickhouse_username: (*args).clickhouse_username.clone(),
+                        clickhouse_password: (*args).clickhouse_password.clone(),
 					});
-					inspector.process_slot_with_retry(slot)
+					inspector.process_slot_with_retry_clickhouse(slot, Some(epoch))
 				})
 			})
 			// Limit concurrency (here, up to 10 tasks concurrently).
@@ -212,7 +376,7 @@ impl Inspector {
 }
 
 pub async fn entry(args: InspectArgs) {
-    let inspector = Inspector::new(args);
+    let inspector = Inspector::new(args.clone());
 
     match (inspector.args.slot, inspector.args.epoch) {
         (None, None) => {
@@ -223,7 +387,7 @@ pub async fn entry(args: InspectArgs) {
             eprintln!("Error: Cannot specify both --slot and --epoch");
             return;
         }
-        (Some(slot), None) => inspector.process_slot_with_retry(slot),
+        (Some(slot), None) => inspector.process_slot_with_retry_clickhouse(slot, None).await,
         (None, Some(epoch)) => inspector.process_epoch_async(epoch).await,
     }
 }

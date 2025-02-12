@@ -6,6 +6,9 @@ version = "0.1.0"
 [dependencies]
 solana-client = { workspace = true }
 solana-transaction-status = { workspace = true }
+solana-program = {workspace = true}
+solana-epoch-schedule = "2.1.11"
+solana-rpc-client-api = "1.18.22"
 
 clap = { version = "4.5.16", features = ["derive", "env"] }
 classifier-core = { version = "0.1.0", path = "../classifier-core" }
@@ -14,7 +17,10 @@ tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt"] }
 actions = { version = "0.1.0", path = "../actions" }
 classifier-handler = { version = "0.1.0", path = "../../classifiers/classifier-handler" }
 action-tree = { version = "0.1.0", path = "../action-tree" }
+reqwest = { version = "0.12", features = ["json"] }
 tokio = "1.40.0"
 time-machine-api = { version = "0.1.0", path = "../api" }
 retry = "2.0.0"
 futures = "0.3.31"
+serde_json = "1.0.128"
+urlencoding = "2.1.3"
