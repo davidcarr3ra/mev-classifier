@@ -49,7 +49,7 @@ pub fn classify_instruction(
         .get_pubkey(ix.program_id_index)
         .ok_or_else(|| ClassifyInstructionError::MissingProgramId)?;
 
-    println!("PROGRAM ID: {:?}", program_id);
+    // println!("PROGRAM ID: {:?}", program_id);
 
     let action_result = classify_instruction_matcher!(
         program_id,
@@ -98,7 +98,7 @@ pub fn classify_instruction(
         misc_classifiers::StarAtlasFactionEnlistmentClassifier,
     );
 
-    println!("ACTION RESULT: {:?}", action_result);
+    // println!("ACTION RESULT: {:?}", action_result);
 
     let action = match action_result {
         Ok(Some(action)) => Some(action),

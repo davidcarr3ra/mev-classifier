@@ -51,6 +51,8 @@ impl ActionTrait for WhirlpoolsAction {
         action_id: ActionNodeId,
         tree: &ActionTree,
     ) -> Result<Option<DexSwap>, anyhow::Error> {
+				// println!("IN INTO DEX SWAP");
+				// println!("ACTION: {:?}", self);
         let dex_swap = match self {
             WhirlpoolsAction::Swap(action) => {
                 let (input_account, output_account, input_pool_account, output_pool_account) =

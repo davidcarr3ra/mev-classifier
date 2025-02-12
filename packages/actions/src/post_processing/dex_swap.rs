@@ -27,7 +27,8 @@ impl DexSwap {
 					Ok(dex_swap) => dex_swap,
 					Err(e) => {
 							tracing::error!(
-									"Failed to convert action into DexSwap: {:?}, signature: {:?}",
+									"Failed to convert action into DexSwap. \n Action: {:?} \n Error: {:?} \n Signature: {:?}",
+									action,
 									e,
 									txn.signature
 							);
