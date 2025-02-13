@@ -250,10 +250,10 @@ impl Inspector {
 			self.rpc_client.get_block_with_config(
 				slot,
 				RpcBlockConfig {
-						max_supported_transaction_version: Some(0),
-						encoding: Some(UiTransactionEncoding::Base64),
-						transaction_details: Some(TransactionDetails::Full),
-						..Default::default()
+                    max_supported_transaction_version: Some(0),
+                    encoding: Some(UiTransactionEncoding::Base64),
+                    transaction_details: Some(TransactionDetails::Full),
+                    ..Default::default()
 				},
 			)
 		}) {
@@ -268,17 +268,17 @@ impl Inspector {
 		};
 
 		println!(
-				"Inspecting {} transactions from slot {}",
-				block.transactions.as_ref().unwrap().len(),
-				slot
+            "Inspecting {} transactions from slot {}",
+            block.transactions.as_ref().unwrap().len(),
+            slot
 		);
 
 		let mut tree = match classify_block(slot, block, self.args.filter_transaction.clone()) {
-				Ok(tree) => tree,
-				Err(err) => {
-						eprintln!("Failed to classify block: {:?}", err);
-						return;
-				}
+            Ok(tree) => tree,
+            Err(err) => {
+                eprintln!("Failed to classify block: {:?}", err);
+                return;
+            }
 		};
 
 		let block_id = tree.root();
@@ -286,51 +286,51 @@ impl Inspector {
 		label_tree(&mut tree);
 
 		post_process(
-				PostProcessConfig {
-						retain_votes: false,
-						remove_empty_transactions: true,
-						cluster_jito_bundles: true,
-				},
-				&mut tree,
+            PostProcessConfig {
+                retain_votes: false,
+                remove_empty_transactions: true,
+                cluster_jito_bundles: true,
+            },
+            &mut tree,
 		);
 
 		let block_documents = match database::document_builder::build_block_documents(&tree, block_id) {
-				Ok(doc) => doc,
-				Err(err) => {
-						eprintln!("Failed to build block documents: {:?}", err);
-						return;
-				}
+            Ok(doc) => doc,
+            Err(err) => {
+                eprintln!("Failed to build block documents: {:?}", err);
+                return;
+            }
 		};
 
 		// Write block to beta DB (Should not be writing to prod with this CLI tool)
 		if let Some(mongo_uri) = &self.args.mongo_uri {
-				let rt = tokio::runtime::Runtime::new().unwrap();
+            let rt = tokio::runtime::Runtime::new().unwrap();
 
-				rt.block_on(async {
-						let client = match MongoDBClient::new(MongoDBClientConfig {
-								uri: mongo_uri.clone(),
-								stage: MongoDBStage::Beta,
-						})
-						.await
-						{
-								Ok(client) => client,
-								Err(err) => {
-										eprintln!("Failed to create MongoDB client: {:?}", err);
-										return;
-								}
-						};
+            rt.block_on(async {
+                let client = match MongoDBClient::new(MongoDBClientConfig {
+                    uri: mongo_uri.clone(),
+                    stage: MongoDBStage::Beta,
+                })
+                .await
+                {
+                    Ok(client) => client,
+                    Err(err) => {
+                        eprintln!("Failed to create MongoDB client: {:?}", err);
+                        return;
+                    }
+                };
 
-						match client.write_block_documents(block_documents).await {
-								Ok(_) => {}
-								Err(err) => {
-										eprintln!("Failed to write block documents: {:?}", err);
-								}
-						}
-				});
+                match client.write_block_documents(block_documents).await {
+                    Ok(_) => {}
+                    Err(err) => {
+                        eprintln!("Failed to write block documents: {:?}", err);
+                    }
+                }
+            });
 		}
 
 		if self.args.write_tree && tree.num_children(block_id) > 0 {
-				self.write_tree_results(&tree);
+            self.write_tree_results(&tree);
 		}
 	}
 
