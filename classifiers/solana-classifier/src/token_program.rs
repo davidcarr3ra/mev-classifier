@@ -3,11 +3,32 @@ use classifier_core::{ClassifiableInstruction, ClassifiableTransaction};
 use classifier_trait::{ClassifyInstructionResult, InstructionClassifier};
 use solana_sdk::{program_option::COption, pubkey::Pubkey};
 use spl_token::instruction::{AuthorityType, TokenInstruction};
+use anchor_spl::token_2022;
+use std::marker::PhantomData;
 
-pub struct TokenProgramClassifier;
+pub trait TokenProgramId {
+	const ID: Pubkey;
+}
 
-impl InstructionClassifier for TokenProgramClassifier {
-    const ID: Pubkey = spl_token::ID;
+// Marker types for the two programs
+pub struct OriginalToken;
+pub struct Token2022;
+
+impl TokenProgramId for OriginalToken {
+	const ID: Pubkey = spl_token::ID;
+}
+
+impl TokenProgramId for Token2022 {
+	const ID: Pubkey = token_2022::ID;
+}
+
+// Generic classifier that uses the marker type
+pub struct GenericTokenProgramClassifier<T: TokenProgramId> {
+	phantom: PhantomData<T>,
+}
+
+impl<T: TokenProgramId> InstructionClassifier for GenericTokenProgramClassifier<T> {
+    const ID: Pubkey = T::ID;
 
     fn classify_instruction(
         txn: &ClassifiableTransaction,
@@ -76,6 +97,79 @@ impl InstructionClassifier for TokenProgramClassifier {
         }
     }
 }
+
+// pub struct TokenProgramClassifier;
+
+// impl InstructionClassifier for TokenProgramClassifier {
+//     const ID: Pubkey = spl_token::ID;
+
+//     fn classify_instruction(
+//         txn: &ClassifiableTransaction,
+//         ix: &ClassifiableInstruction,
+//     ) -> ClassifyInstructionResult {
+//         let token_instruction = TokenInstruction::unpack(&ix.data)
+//             .map_err(|e| anyhow::anyhow!("Failed to unpack token instruction: {:?}", e))?;
+
+//         match token_instruction {
+//             TokenInstruction::InitializeMint { .. } => classify_initialize_mint(txn, ix),
+//             TokenInstruction::InitializeAccount => classify_initialize_account(txn, ix),
+//             TokenInstruction::InitializeMultisig { .. } => classify_initialize_multisig(txn, ix),
+//             TokenInstruction::Transfer { amount } => classify_transfer(txn, ix, amount),
+//             TokenInstruction::Approve { amount } => classify_approve(txn, ix, amount),
+//             TokenInstruction::Revoke => classify_revoke(txn, ix),
+//             TokenInstruction::SetAuthority {
+//                 authority_type,
+//                 new_authority,
+//             } => classify_set_authority(txn, ix, authority_type, new_authority),
+//             TokenInstruction::MintTo { amount } => classify_mint_to(txn, ix, amount),
+//             TokenInstruction::Burn { amount } => classify_burn(txn, ix, amount),
+//             TokenInstruction::CloseAccount => classify_close_account(txn, ix),
+//             TokenInstruction::FreezeAccount => classify_freeze_account(txn, ix),
+//             TokenInstruction::ThawAccount => classify_thaw_account(txn, ix),
+//             TokenInstruction::TransferChecked { amount, decimals } => {
+//                 classify_transfer_checked(txn, ix, amount, decimals)
+//             }
+//             TokenInstruction::ApproveChecked { amount, decimals } => {
+//                 classify_approve_checked(txn, ix, amount, decimals)
+//             }
+//             TokenInstruction::MintToChecked { amount, decimals } => {
+//                 classify_mint_to_checked(txn, ix, amount, decimals)
+//             }
+//             TokenInstruction::BurnChecked { amount, decimals } => {
+//                 classify_burn_checked(txn, ix, amount, decimals)
+//             }
+//             TokenInstruction::InitializeAccount2 { owner } => {
+//                 classify_initialize_account2(txn, ix, owner)
+//             }
+//             TokenInstruction::SyncNative => classify_sync_native(txn, ix),
+//             TokenInstruction::InitializeAccount3 { owner } => {
+//                 classify_initialize_account3(txn, ix, owner)
+//             }
+//             TokenInstruction::InitializeMultisig2 { .. } => classify_initialize_multisig2(txn, ix),
+//             TokenInstruction::InitializeMint2 {
+//                 decimals,
+//                 mint_authority,
+//                 freeze_authority,
+//             } => classify_initialize_mint2(
+//                 txn,
+//                 ix,
+//                 decimals,
+//                 mint_authority,
+//                 freeze_authority.into(),
+//             ),
+//             TokenInstruction::GetAccountDataSize => classify_get_account_data_size(txn, ix),
+//             TokenInstruction::InitializeImmutableOwner => {
+//                 classify_initialize_immutable_owner(txn, ix)
+//             }
+//             TokenInstruction::AmountToUiAmount { amount } => {
+//                 classify_amount_to_ui_amount(txn, ix, amount)
+//             }
+//             TokenInstruction::UiAmountToAmount { ui_amount } => {
+//                 classify_ui_amount_to_amount(txn, ix, ui_amount)
+//             }
+//         }
+//     }
+// }
 
 fn check_account_len(ix: &ClassifiableInstruction, expected: usize) -> Result<(), anyhow::Error> {
     if ix.accounts.len() != expected {

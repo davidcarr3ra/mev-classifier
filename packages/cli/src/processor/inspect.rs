@@ -67,7 +67,7 @@ pub fn entry(args: InspectArgs) {
         }
     };
 
-		// println!("TREE: \n {}", tree);
+		println!("TREE: \n {}", tree);
 
     let block_id = tree.root();
 
