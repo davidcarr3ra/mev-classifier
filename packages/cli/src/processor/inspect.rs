@@ -343,9 +343,8 @@ impl Inspector {
 			}
 		};
 
-		let first_slot = epoch_schedule.get_first_slot_in_epoch(epoch);
-		// let last_slot = epoch_schedule.get_last_slot_in_epoch(epoch);
-        let last_slot = first_slot + 10000;
+        let first_slot = epoch_schedule.get_first_slot_in_epoch(epoch);
+		let last_slot = epoch_schedule.get_last_slot_in_epoch(epoch);
 
 		println!("Processing epoch {} (slots {} to {})", epoch, first_slot, last_slot);
 
@@ -436,7 +435,7 @@ where
     E: std::fmt::Debug,
 {
 	// Configure an exponential backoff starting at 100ms
-	retry(Exponential::from_millis(100).take(2), || {
+	retry(Exponential::from_millis(100).take(3), || {
 			let result = f();
 			if let Err(e) = &result {
 					eprintln!("Encountered error, retrying: {:?}", e);
