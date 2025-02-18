@@ -5,12 +5,14 @@ mod protocols;
 mod serialize_tree;
 mod solana;
 mod transaction;
+mod flat_serialization;
 
 pub use block::*;
 pub use jito::*;
 pub use post_processing::*;
 pub use protocols::*;
 pub use serialize_tree::*;
+pub use flat_serialization::*;
 pub use solana::*;
 
 use classifier_core::ClassifiableTransaction;
