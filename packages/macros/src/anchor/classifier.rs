@@ -75,13 +75,15 @@ fn gen_classifier_impl(input: &AnchorClassifierInput) -> TokenStream {
     let enum_name = format_ident!("{}Action", input.name.to_string().to_upper_camel_case());
 
     let id = gen_id(&input.idl);
-
     let mut arms = Vec::with_capacity(input.variants.len());
 
     for variant in &input.variants {
         let arm = quote! {
+            // println!("Instruction: {:?}", ix);
             if ix.data.starts_with(actions::#anchor_mod::internal::#variant::DISCRIMINATOR) {
-                let decoded = actions::#actions_mod::#variant::from_instruction(txn, ix)?;
+								// println!("Instruction starts with discriminator");
+                let decoded = actions::#actions_mod::#variant::from_instruction(txn, ix)?; // failing here for phoenix swap
+								// println!("Successfully decoded instruction");
                 return Ok(Some(actions::#enum_name::#variant(decoded.into()).into()))
             }
         };

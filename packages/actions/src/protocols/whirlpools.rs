@@ -126,19 +126,13 @@ fn whirlpool_into_dex_swap(
     output_token_account: Pubkey,
     output_pool_account: Pubkey,
 ) -> Result<DexSwap, anyhow::Error> {
-
-	println!("IN WHIRLPOOL INTO DEX SWAP");
 	
 	let input_transfer = find_transfer(tree, action_id, &input_token_account, &input_pool_account)
 			.ok_or_else(|| anyhow::anyhow!("No input transfer found"))?;
 
-	println!("INPUT TRANSFER: {:?}", input_transfer);
-
 	let output_transfer =
 			find_transfer(tree, action_id, &output_pool_account, &output_token_account)
 					.ok_or_else(|| anyhow::anyhow!("No output transfer found"))?;
-
-	println!("OUTPUT TRANSFER: {:?}", output_transfer);
 
 	let input_mint = txn.get_mint_for_token_account(&input_token_account)?;
 

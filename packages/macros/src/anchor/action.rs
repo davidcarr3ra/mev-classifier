@@ -109,6 +109,7 @@ impl Parse for DeclareAnchorActions {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let name: Ident = input.parse()?;
         let idl = get_idl(&name).map_err(|e| syn::Error::new(name.span(), e))?;
+				println!("IDL: {:#?}", idl);
 
         input.parse::<Token![,]>()?;
 

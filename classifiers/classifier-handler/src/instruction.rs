@@ -76,7 +76,8 @@ pub fn classify_instruction(
         anchor_classifiers::JupiterV6Classifier,
         anchor_classifiers::MeteoraDlmmClassifier,
         anchor_classifiers::RaydiumClmmClassifier,
-        anchor_classifiers::PhoenixV1Classifier,
+        // anchor_classifiers::PhoenixV1Classifier, // todo: replace with misc_classifiers::PhoenixV1Classifier
+				misc_classifiers::PhoenixV1Classifier,
         misc_classifiers::RaydiumAmmClassifier,
         //
         // Star atlas (shows up everywhere)
