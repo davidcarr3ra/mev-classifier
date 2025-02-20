@@ -30,7 +30,6 @@ pub fn define_actions(item: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn declare_anchor_actions(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeclareAnchorActions);
-		// println!("INPUT: {:#?}", input);
     gen_anchor_action_declarations(input).into()
 }
 

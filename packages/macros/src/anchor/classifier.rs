@@ -79,11 +79,8 @@ fn gen_classifier_impl(input: &AnchorClassifierInput) -> TokenStream {
 
     for variant in &input.variants {
         let arm = quote! {
-            // println!("Instruction: {:?}", ix);
             if ix.data.starts_with(actions::#anchor_mod::internal::#variant::DISCRIMINATOR) {
-								// println!("Instruction starts with discriminator");
-                let decoded = actions::#actions_mod::#variant::from_instruction(txn, ix)?; // failing here for phoenix swap
-								// println!("Successfully decoded instruction");
+                let decoded = actions::#actions_mod::#variant::from_instruction(txn, ix)?;
                 return Ok(Some(actions::#enum_name::#variant(decoded.into()).into()))
             }
         };

@@ -14,7 +14,6 @@ pub fn find_transfer(
     for child_id in tree.children(node_id) {
         let action = tree.get(child_id).unwrap().get();
 
-				// TODO: add token2022 (token program extension)
         match action {
             Action::Token(token_action) => match token_action {
                 Token::Transfer(transfer) => {

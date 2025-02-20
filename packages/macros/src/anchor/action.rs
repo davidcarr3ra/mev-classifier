@@ -109,7 +109,6 @@ impl Parse for DeclareAnchorActions {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let name: Ident = input.parse()?;
         let idl = get_idl(&name).map_err(|e| syn::Error::new(name.span(), e))?;
-				println!("IDL: {:#?}", idl);
 
         input.parse::<Token![,]>()?;
 
@@ -383,7 +382,7 @@ fn gen_actions_enum(input: &DeclareAnchorActions) -> TokenStream {
         let ix_name = format_ident!("{}", ix.name.to_string().to_upper_camel_case());
         let ix_struct_name = format_ident!("{}", ix.name.to_string().to_upper_camel_case());
 
-        let variant = quote! {
+        let variant: TokenStream = quote! {
             #ix_name(#action_mod_name::#ix_struct_name),
         };
 
