@@ -3023,6 +3023,7 @@ version = "0.1.0"
 dependencies = [
  "actions",
  "anyhow",
+ "borsh 0.10.3",
  "classifier-core",
  "classifier-trait",
  "solana-sdk",
