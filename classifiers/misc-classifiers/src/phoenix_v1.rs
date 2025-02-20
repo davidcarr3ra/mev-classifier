@@ -75,10 +75,10 @@ fn classify_swap(ix: &ClassifiableInstruction, rest: &[u8]) -> ClassifyInstructi
     }
 
     // Log the entire byte slice length before deserialization.
-    println!(
-        "Data length for OrderPacket deserialization: {}",
-        rest.len()
-    );
+    // println!(
+    //     "Data length for OrderPacket deserialization: {}",
+    //     rest.len()
+    // );
 
     // Deserialize directly from the provided slice.
     let order_packet = OrderPacket::deserialize(&mut &rest[..])
