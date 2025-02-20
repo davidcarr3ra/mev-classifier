@@ -65,8 +65,8 @@ pub fn classify_instruction(
         solana_classifier::ComputeBudgetClassifier,
         solana_classifier::VoteClassifier,
         solana_classifier::SystemProgramClassifier,
-				solana_classifier::GenericTokenProgramClassifier<solana_classifier::OriginalToken>,
-				solana_classifier::GenericTokenProgramClassifier<solana_classifier::Token2022>,
+        solana_classifier::GenericTokenProgramClassifier<solana_classifier::OriginalToken>,
+        solana_classifier::GenericTokenProgramClassifier<solana_classifier::Token2022>,
         solana_classifier::AssociatedTokenClassifier,
         //
         // Third party classifiers
@@ -75,7 +75,7 @@ pub fn classify_instruction(
         anchor_classifiers::JupiterV6Classifier,
         anchor_classifiers::MeteoraDlmmClassifier,
         anchor_classifiers::RaydiumClmmClassifier,
-				misc_classifiers::PhoenixV1Classifier,
+        misc_classifiers::PhoenixV1Classifier,
         misc_classifiers::RaydiumAmmClassifier,
         //
         // Star atlas (shows up everywhere)

@@ -1,13 +1,13 @@
 use actions::{token_actions, Token};
+use anchor_spl::token_2022;
 use classifier_core::{ClassifiableInstruction, ClassifiableTransaction};
 use classifier_trait::{ClassifyInstructionResult, InstructionClassifier};
 use solana_sdk::{program_option::COption, pubkey::Pubkey};
 use spl_token::instruction::{AuthorityType, TokenInstruction};
-use anchor_spl::token_2022;
 use std::marker::PhantomData;
 
 pub trait TokenProgramId {
-	const ID: Pubkey;
+    const ID: Pubkey;
 }
 
 // Marker types for the two programs
@@ -15,16 +15,16 @@ pub struct OriginalToken;
 pub struct Token2022;
 
 impl TokenProgramId for OriginalToken {
-	const ID: Pubkey = spl_token::ID;
+    const ID: Pubkey = spl_token::ID;
 }
 
 impl TokenProgramId for Token2022 {
-	const ID: Pubkey = token_2022::ID;
+    const ID: Pubkey = token_2022::ID;
 }
 
 // Generic classifier that uses the marker type
 pub struct GenericTokenProgramClassifier<T: TokenProgramId> {
-	phantom: PhantomData<T>,
+    phantom: PhantomData<T>,
 }
 
 impl<T: TokenProgramId> InstructionClassifier for GenericTokenProgramClassifier<T> {

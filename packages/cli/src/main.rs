@@ -12,5 +12,4 @@ fn main() {
     let args = entry::CLI::parse();
 
     entry::entry(args);
-    
 }

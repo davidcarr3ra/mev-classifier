@@ -1,11 +1,11 @@
 // todo: figure out why the anchor proc macro isn't working for phoenix v1
 
 pub struct PhoenixV1Classifier;
-use solana_sdk::pubkey::Pubkey;
-use classifier_core::{ClassifiableInstruction, ClassifiableTransaction};
-use classifier_trait::{ClassifyInstructionResult, InstructionClassifier};
 use actions::{Action, PhoenixV1Action, SelfTradeBehavior, Side, SwapAction::ImmediateOrCancel};
 use borsh::BorshDeserialize;
+use classifier_core::{ClassifiableInstruction, ClassifiableTransaction};
+use classifier_trait::{ClassifyInstructionResult, InstructionClassifier};
+use solana_sdk::pubkey::Pubkey;
 
 #[derive(BorshDeserialize, Debug)]
 enum OrderPacket {
@@ -51,12 +51,15 @@ enum OrderPacket {
 impl InstructionClassifier for PhoenixV1Classifier {
     const ID: Pubkey = solana_sdk::pubkey!("PhoeNiXZ8ByJGLkxNfZRnkUfjvmuYqLR89jjFHGqdXY");
 
-    fn classify_instruction(_txn: &ClassifiableTransaction, ix: &ClassifiableInstruction) -> ClassifyInstructionResult {
+    fn classify_instruction(
+        _txn: &ClassifiableTransaction,
+        ix: &ClassifiableInstruction,
+    ) -> ClassifyInstructionResult {
         let (&tag, rest) = ix
             .data
             .split_first()
             .ok_or_else(|| anyhow::anyhow!("Invalid Phoenix V1 instruction data"))?;
-        
+
         match tag {
             0 => classify_swap(ix, rest),
             _ => Ok(None),
@@ -72,7 +75,10 @@ fn classify_swap(ix: &ClassifiableInstruction, rest: &[u8]) -> ClassifyInstructi
     }
 
     // Log the entire byte slice length before deserialization.
-    println!("Data length for OrderPacket deserialization: {}", rest.len());
+    println!(
+        "Data length for OrderPacket deserialization: {}",
+        rest.len()
+    );
 
     // Deserialize directly from the provided slice.
     let order_packet = OrderPacket::deserialize(&mut &rest[..])
@@ -80,33 +86,34 @@ fn classify_swap(ix: &ClassifiableInstruction, rest: &[u8]) -> ClassifyInstructi
 
     println!("Order packet: {:?}", order_packet);
 
-		match order_packet { // todo: add post only and limit
-			OrderPacket::ImmediateOrCancel {
-				side,
-				price_in_ticks,
-				num_base_lots,
-				num_quote_lots,
-				min_base_lots_to_fill,
-				min_quote_lots_to_fill,
-				self_trade_behavior,
-				match_limit,
-				client_order_id,
-				use_only_deposited_funds,
-				..
-			} => Ok(Some(Action::PhoenixV1Action(
-				PhoenixV1Action::Swap(ImmediateOrCancel {
-					side,
-					price_in_ticks,
-					num_base_lots,
-					num_quote_lots,
-					min_base_lots_to_fill,
-					min_quote_lots_to_fill,
-					self_trade_behavior,
-					match_limit,
-					client_order_id,
-					use_only_deposited_funds,
-				})
-			))),
-			_ => Ok(None),
-		}
+    match order_packet {
+        // todo: add post only and limit
+        OrderPacket::ImmediateOrCancel {
+            side,
+            price_in_ticks,
+            num_base_lots,
+            num_quote_lots,
+            min_base_lots_to_fill,
+            min_quote_lots_to_fill,
+            self_trade_behavior,
+            match_limit,
+            client_order_id,
+            use_only_deposited_funds,
+            ..
+        } => Ok(Some(Action::PhoenixV1Action(PhoenixV1Action::Swap(
+            ImmediateOrCancel {
+                side,
+                price_in_ticks,
+                num_base_lots,
+                num_quote_lots,
+                min_base_lots_to_fill,
+                min_quote_lots_to_fill,
+                self_trade_behavior,
+                match_limit,
+                client_order_id,
+                use_only_deposited_funds,
+            },
+        )))),
+        _ => Ok(None),
+    }
 }

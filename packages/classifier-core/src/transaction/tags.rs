@@ -55,23 +55,36 @@ pub enum SandwichAttackTag {
 impl SandwichAttackTag {
     pub fn to_json(&self) -> serde_json::Value {
         match self {
-            SandwichAttackTag::Frontrun { token_bought, amount, attacker_pubkey } => {
+            SandwichAttackTag::Frontrun {
+                token_bought,
+                amount,
+                attacker_pubkey,
+            } => {
                 serde_json::json!({
                     "type": "sandwich_frontrun",
                     "tokenBought": token_bought.to_string(),
                     "amount": amount,
                     "attackerPubkey": attacker_pubkey.to_string(),
                 })
-            },
-            SandwichAttackTag::Victim { token_bought, amount, victim_pubkey } => {
+            }
+            SandwichAttackTag::Victim {
+                token_bought,
+                amount,
+                victim_pubkey,
+            } => {
                 serde_json::json!({
                     "type": "sandwich_victim",
                     "tokenBought": token_bought.to_string(),
                     "amount": amount,
                     "victimPubkey": victim_pubkey.to_string(),
                 })
-            },
-            SandwichAttackTag::Backrun { token_sold, amount, attacker_pubkey, profit_amount } => {
+            }
+            SandwichAttackTag::Backrun {
+                token_sold,
+                amount,
+                attacker_pubkey,
+                profit_amount,
+            } => {
                 serde_json::json!({
                     "type": "sandwich_backrun",
                     "tokenSold": token_sold.to_string(),
@@ -79,7 +92,7 @@ impl SandwichAttackTag {
                     "attackerPubkey": attacker_pubkey.to_string(),
                     "profitAmount": profit_amount,
                 })
-            },
+            }
         }
     }
 }

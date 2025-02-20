@@ -124,24 +124,23 @@ fn whirlpool_into_dex_swap(
     output_token_account: Pubkey,
     output_pool_account: Pubkey,
 ) -> Result<DexSwap, anyhow::Error> {
-	
-	let input_transfer = find_transfer(tree, action_id, &input_token_account, &input_pool_account)
-			.ok_or_else(|| anyhow::anyhow!("No input transfer found"))?;
+    let input_transfer = find_transfer(tree, action_id, &input_token_account, &input_pool_account)
+        .ok_or_else(|| anyhow::anyhow!("No input transfer found"))?;
 
-	let output_transfer =
-			find_transfer(tree, action_id, &output_pool_account, &output_token_account)
-					.ok_or_else(|| anyhow::anyhow!("No output transfer found"))?;
+    let output_transfer =
+        find_transfer(tree, action_id, &output_pool_account, &output_token_account)
+            .ok_or_else(|| anyhow::anyhow!("No output transfer found"))?;
 
-	let input_mint = txn.get_mint_for_token_account(&input_token_account)?;
+    let input_mint = txn.get_mint_for_token_account(&input_token_account)?;
 
-	let output_mint = txn.get_mint_for_token_account(&output_token_account)?;
+    let output_mint = txn.get_mint_for_token_account(&output_token_account)?;
 
-	Ok(DexSwap {
-			input_mint,
-			output_mint,
-			input_token_account,
-			output_token_account,
-			input_amount: input_transfer.amount,
-			output_amount: output_transfer.amount,
-	})
+    Ok(DexSwap {
+        input_mint,
+        output_mint,
+        input_token_account,
+        output_token_account,
+        input_amount: input_transfer.amount,
+        output_amount: output_transfer.amount,
+    })
 }

@@ -1,6 +1,6 @@
 use crate::ActionTrait;
-use macros::action_enum;
 use borsh::BorshDeserialize;
+use macros::action_enum;
 
 #[derive(BorshDeserialize, Debug, Clone, PartialEq, Eq)]
 #[repr(u8)]

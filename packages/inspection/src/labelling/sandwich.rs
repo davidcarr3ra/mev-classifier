@@ -1,7 +1,7 @@
 use actions::{Action, ActionNodeId, ActionTree, DexSwap};
+use classifier_core::{SandwichAttackTag, TransactionTag};
 use std::collections::HashMap;
 use thiserror::Error;
-use classifier_core::{TransactionTag, SandwichAttackTag};
 
 #[derive(Debug, Error)]
 enum ClassifySandwichAttackError {
@@ -20,7 +20,8 @@ pub fn classify_sandwich_attack(root: ActionNodeId, tree: &mut ActionTree) {
         if let Action::ClassifiableTransaction(_) = tree.get(txn_id).unwrap().get() {
             for child_id in tree.descendants(txn_id) {
                 if let Action::DexSwap(swap) = tree.get(child_id).unwrap().get() {
-                    let mut token_pair_vec = vec![swap.input_mint.to_string(), swap.output_mint.to_string()];
+                    let mut token_pair_vec =
+                        vec![swap.input_mint.to_string(), swap.output_mint.to_string()];
                     token_pair_vec.sort_unstable();
                     let token_pair = token_pair_vec.join("-");
                     token_pair_groups

@@ -15,9 +15,9 @@ impl InstructionClassifier for AssociatedTokenClassifier {
         ix: &ClassifiableInstruction,
     ) -> ClassifyInstructionResult {
         if ix.data.is_empty() {
-            return classify_create(txn, ix)
+            return classify_create(txn, ix);
         }
-        
+
         let instruction =
             AssociatedTokenAccountInstruction::try_from_slice(&ix.data).map_err(|_| {
                 anyhow::anyhow!("Failed to deserialize associated token account instruction")

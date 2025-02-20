@@ -92,11 +92,13 @@ fn classify_swap_base_in(
         )
     })?;
 
-    let user_destination_account = txn.get_pubkey(ix.accounts[destination_idx]).ok_or_else(|| {
-        anyhow::anyhow!(
+    let user_destination_account =
+        txn.get_pubkey(ix.accounts[destination_idx])
+            .ok_or_else(|| {
+                anyhow::anyhow!(
             "Invalid Raydium AMM swap base in instruction: user destination account not found"
         )
-    })?;
+            })?;
 
     Ok(Some(Action::RaydiumAmmAction(
         RaydiumAmmAction::SwapBaseIn(SwapBaseIn {

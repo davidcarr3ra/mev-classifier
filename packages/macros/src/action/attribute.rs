@@ -14,7 +14,7 @@ pub fn parse_action_attribute(input: ItemStruct) -> TokenStream {
     let struct_fields = &input.fields;
 
     let derivations = get_action_derivations();
-    
+
     // Generate the derive statement with the common traits
     let expanded = quote! {
         #derivations
