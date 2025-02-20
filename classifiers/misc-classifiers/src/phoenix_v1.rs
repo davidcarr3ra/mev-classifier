@@ -4,23 +4,8 @@ pub struct PhoenixV1Classifier;
 use solana_sdk::pubkey::Pubkey;
 use classifier_core::{ClassifiableInstruction, ClassifiableTransaction};
 use classifier_trait::{ClassifyInstructionResult, InstructionClassifier};
-use actions::{Action, PhoenixV1Action};
+use actions::{Action, PhoenixV1Action, SelfTradeBehavior, Side, SwapAction::ImmediateOrCancel};
 use borsh::BorshDeserialize;
-
-#[derive(BorshDeserialize, Debug)]
-#[repr(u8)]
-pub enum Side {
-    Bid = 0,
-    Ask = 1,
-}
-
-#[derive(BorshDeserialize, Debug)]
-#[repr(u8)]
-enum SelfTradeBehavior {
-    Abort = 0,
-    CancelProvide = 1,
-    DecrementTake = 2,
-}
 
 #[derive(BorshDeserialize, Debug)]
 enum OrderPacket {
@@ -95,26 +80,33 @@ fn classify_swap(ix: &ClassifiableInstruction, rest: &[u8]) -> ClassifyInstructi
 
     println!("Order packet: {:?}", order_packet);
 
-		Ok(Some(Action::PhoenixV1Action(PhoenixV1Action::Swap)))
-
-    // // Match on the order packet variant and extract side and amount traded.
-    // match order_packet {
-    //     OrderPacket::ImmediateOrCancel {
-    //         side,
-    //         num_base_lots,
-    //         num_quote_lots,
-    //         ..
-    //     } => {
-    //         // For demonstration, we assume:
-    //         // If it's a Bid, the traded amount is the quote lots.
-    //         // If it's an Ask, the traded amount is the base lots.
-    //         let amount_traded = match side {
-    //             Side::Bid => num_quote_lots,
-    //             Side::Ask => num_base_lots,
-    //         };
-    //         println!("Extracted side: {:?}, amount traded: {}", side, amount_traded);
-    //         Ok(Some(Action::PhoenixV1Action(PhoenixV1Action::Swap { side, amount_traded })))
-    //     },
-    //     _ => Err(anyhow::anyhow!("Unsupported order packet variant")),
-    // }
+		match order_packet { // todo: add post only and limit
+			OrderPacket::ImmediateOrCancel {
+				side,
+				price_in_ticks,
+				num_base_lots,
+				num_quote_lots,
+				min_base_lots_to_fill,
+				min_quote_lots_to_fill,
+				self_trade_behavior,
+				match_limit,
+				client_order_id,
+				use_only_deposited_funds,
+				..
+			} => Ok(Some(Action::PhoenixV1Action(
+				PhoenixV1Action::Swap(ImmediateOrCancel {
+					side,
+					price_in_ticks,
+					num_base_lots,
+					num_quote_lots,
+					min_base_lots_to_fill,
+					min_quote_lots_to_fill,
+					self_trade_behavior,
+					match_limit,
+					client_order_id,
+					use_only_deposited_funds,
+				})
+			))),
+			_ => Ok(None),
+		}
 }
