@@ -1,121 +1,61 @@
-use macros::declare_anchor_actions;
-
 use crate::ActionTrait;
+use borsh::BorshDeserialize;
+use macros::action_enum;
 
-declare_anchor_actions!(
-    phoenix_v1,
-    Swap {
-        Args: {},
-        Accounts: {},
+#[derive(BorshDeserialize, Debug, Clone, PartialEq, Eq)]
+#[repr(u8)]
+pub enum Side {
+    Bid = 0,
+    Ask = 1,
+}
+
+#[derive(BorshDeserialize, Debug, Clone, PartialEq, Eq)]
+#[repr(u8)]
+pub enum SelfTradeBehavior {
+    Abort = 0,
+    CancelProvide = 1,
+    DecrementTake = 2,
+}
+
+#[action_enum]
+pub enum PhoenixV1Action {
+    Swap(SwapAction),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SwapAction {
+    ImmediateOrCancel {
+        side: Side,
+        price_in_ticks: Option<u64>,
+        num_base_lots: u64,
+        num_quote_lots: u64,
+        min_base_lots_to_fill: u64,
+        min_quote_lots_to_fill: u64,
+        self_trade_behavior: SelfTradeBehavior,
+        match_limit: Option<u64>,
+        client_order_id: u128,
+        use_only_deposited_funds: bool,
     },
-    SwapWithFreeFunds {
-        Args: {},
-        Accounts: {},
+    Limit {
+        side: Side,
+        price_in_ticks: u64,
+        num_base_lots: u64,
+        num_quote_lots: u64,
+        min_base_lots_to_fill: u64,
+        min_quote_lots_to_fill: u64,
     },
-    PlaceLimitOrder {
-        Args: {},
-        Accounts: {},
+    PostOnly {
+        side: Side,
+        price_in_ticks: u64,
+        num_base_lots: u64,
+        num_quote_lots: u64,
+        min_base_lots_to_fill: u64,
+        min_quote_lots_to_fill: u64,
     },
-    PlaceLimitOrderWithFreeFunds {
-        Args: {},
-        Accounts: {},
-    },
-    ReduceOrder {
-        Args: {},
-        Accounts: {},
-    },
-    ReduceOrderWithFreeFunds {
-        Args: {},
-        Accounts: {},
-    },
-    CancelAllOrders {
-        Args: {},
-        Accounts: {},
-    },
-    CancelAllOrdersWithFreeFunds {
-        Args: {},
-        Accounts: {},
-    },
-    CancelUpTo {
-        Args: {},
-        Accounts: {},
-    },
-    CancelUpToWithFreeFunds {
-        Args: {},
-        Accounts: {},
-    },
-    CancelMultipleOrdersById {
-        Args: {},
-        Accounts: {},
-    },
-    CancelMultipleOrdersByIdWithFreeFunds {
-        Args: {},
-        Accounts: {},
-    },
-    WithdrawFunds {
-        Args: {},
-        Accounts: {},
-    },
-    DepositFunds {
-        Args: {},
-        Accounts: {},
-    },
-    RequestSeat {
-        Args: {},
-        Accounts: {},
-    },
-    PlaceMultiplePostOnlyOrders {
-        Args: {},
-        Accounts: {},
-    },
-    PlaceMultiplePostOnlyOrdersWithFreeFunds {
-        Args: {},
-        Accounts: {},
-    },
-    InitializeMarket {
-        Args: {},
-        Accounts: {},
-    },
-    ClaimAuthority {
-        Args: {},
-        Accounts: {},
-    },
-    NameSuccessor {
-        Args: {},
-        Accounts: {},
-    },
-    ChangeMarketStatus {
-        Args: {},
-        Accounts: {},
-    },
-    ChangeSeatStatus {
-        Args: {},
-        Accounts: {},
-    },
-    RequestSeatAuthorized {
-        Args: {},
-        Accounts: {},
-    },
-    EvictSeat {
-        Args: {},
-        Accounts: {},
-    },
-    ForceCancelOrders {
-        Args: {},
-        Accounts: {},
-    },
-    CollectFees {
-        Args: {},
-        Accounts: {},
-    },
-    ChangeFeeRecipient {
-        Args: {},
-        Accounts: {},
-    },
-);
+}
 
 impl ActionTrait for PhoenixV1Action {
     fn recurse_during_classify(&self) -> bool {
-        false
+        true
     }
 }

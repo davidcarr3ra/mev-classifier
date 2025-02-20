@@ -14,3 +14,4 @@ actions = { version = "0.1.0", path = "../../packages/actions" }
 classifier-core = { version = "0.1.0", path = "../../packages/classifier-core" }
 classifier-trait = { version = "0.1.0", path = "../classifier-trait" }
 anyhow = "1.0.87"
+borsh = "0.10.3"

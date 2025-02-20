@@ -49,6 +49,8 @@ pub fn classify_instruction(
         .get_pubkey(ix.program_id_index)
         .ok_or_else(|| ClassifyInstructionError::MissingProgramId)?;
 
+    // println!("PROGRAM ID: {:?}", program_id);
+
     let action_result = classify_instruction_matcher!(
         program_id,
         txn,
@@ -63,7 +65,8 @@ pub fn classify_instruction(
         solana_classifier::ComputeBudgetClassifier,
         solana_classifier::VoteClassifier,
         solana_classifier::SystemProgramClassifier,
-        solana_classifier::TokenProgramClassifier,
+        solana_classifier::GenericTokenProgramClassifier<solana_classifier::OriginalToken>,
+        solana_classifier::GenericTokenProgramClassifier<solana_classifier::Token2022>,
         solana_classifier::AssociatedTokenClassifier,
         //
         // Third party classifiers
@@ -72,7 +75,7 @@ pub fn classify_instruction(
         anchor_classifiers::JupiterV6Classifier,
         anchor_classifiers::MeteoraDlmmClassifier,
         anchor_classifiers::RaydiumClmmClassifier,
-        anchor_classifiers::PhoenixV1Classifier,
+        misc_classifiers::PhoenixV1Classifier,
         misc_classifiers::RaydiumAmmClassifier,
         //
         // Star atlas (shows up everywhere)
@@ -95,6 +98,8 @@ pub fn classify_instruction(
         misc_classifiers::StarAtlasPolisLockerSnapshotsClassifier,
         misc_classifiers::StarAtlasFactionEnlistmentClassifier,
     );
+
+    // println!("ACTION RESULT: {:?}", action_result);
 
     let action = match action_result {
         Ok(Some(action)) => Some(action),

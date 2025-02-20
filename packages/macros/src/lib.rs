@@ -2,7 +2,10 @@ use action::{
     action_enum::{parse_define_action_enum, ActionEnumInput},
     attribute::{parse_action_attribute, parse_action_attribute_enum},
 };
-use anchor::{gen_anchor_action_declarations, gen_anchor_classifier, AnchorClassifierInput, DeclareAnchorActions};
+use anchor::{
+    gen_anchor_action_declarations, gen_anchor_classifier, AnchorClassifierInput,
+    DeclareAnchorActions,
+};
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, ItemEnum, ItemStruct};
 

@@ -75,7 +75,6 @@ fn gen_classifier_impl(input: &AnchorClassifierInput) -> TokenStream {
     let enum_name = format_ident!("{}Action", input.name.to_string().to_upper_camel_case());
 
     let id = gen_id(&input.idl);
-
     let mut arms = Vec::with_capacity(input.variants.len());
 
     for variant in &input.variants {

@@ -382,7 +382,7 @@ fn gen_actions_enum(input: &DeclareAnchorActions) -> TokenStream {
         let ix_name = format_ident!("{}", ix.name.to_string().to_upper_camel_case());
         let ix_struct_name = format_ident!("{}", ix.name.to_string().to_upper_camel_case());
 
-        let variant = quote! {
+        let variant: TokenStream = quote! {
             #ix_name(#action_mod_name::#ix_struct_name),
         };
 
