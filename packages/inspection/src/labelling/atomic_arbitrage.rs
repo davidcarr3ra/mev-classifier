@@ -1,6 +1,7 @@
 use actions::{Action, ActionNodeId, ActionTree};
 use classifier_core::{AtomicArbitrageTag, TransactionTag};
 use thiserror::Error;
+use solana_sdk::pubkey::Pubkey;
 
 #[derive(Debug, Error)]
 enum ClassifyAtomicArbitrageError {
@@ -51,6 +52,11 @@ fn try_find_atomic_arb(
     let mut first_swap = None;
     let mut last_swap = None;
 
+    let swapper_address: Pubkey = match tree.get(txn_id).unwrap().get() {
+        Action::ClassifiableTransaction(txn) => txn.static_keys[0],
+        _ => unreachable!(),
+    };
+
     for child in tree.descendants(txn_id) {
         let action_node = tree.get(child).unwrap();
 
@@ -81,6 +87,7 @@ fn try_find_atomic_arb(
         return Ok(Some(AtomicArbitrageTag {
             mint: first_swap.input_mint,
             profit_amount,
+            address: swapper_address,
         }));
     }
 
