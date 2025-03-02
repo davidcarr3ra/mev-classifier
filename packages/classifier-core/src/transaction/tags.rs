@@ -19,6 +19,7 @@ impl TransactionTag {
 pub struct AtomicArbitrageTag {
     pub mint: Pubkey,
     pub profit_amount: i128,
+    pub address: Pubkey,
 }
 
 impl AtomicArbitrageTag {
@@ -27,6 +28,7 @@ impl AtomicArbitrageTag {
             "type": "atomicArbitrage",
             "mint": self.mint.to_string(),
             "profitAmount": self.profit_amount,
+            "address": self.address.to_string(),
         })
     }
 }

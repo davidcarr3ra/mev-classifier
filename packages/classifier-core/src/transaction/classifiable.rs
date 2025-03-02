@@ -22,7 +22,7 @@ pub struct ClassifiableTransaction {
     pub fee: u64,
     pub created_tokens: Option<HashMap<Pubkey, Pubkey>>,
 
-    static_keys: Vec<Pubkey>,
+    pub static_keys: Vec<Pubkey>,
     loaded_addresses: Option<LoadedAddresses>,
 
     // Label metadata
