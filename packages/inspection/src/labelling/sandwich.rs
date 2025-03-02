@@ -9,8 +9,7 @@ enum ClassifySandwichAttackError {
     UnexpectedError(#[from] anyhow::Error),
 }
 
-// Note: For now we only look for sandwich attacks in the same block
-// We also only look at DEX swaps that are descendants of ClassifiableTransactions
+// Limitation: For now we only look for sandwich attacks in the same block
 pub fn classify_sandwich_attack(root: ActionNodeId, tree: &mut ActionTree) {
     // Group swaps by token pair to simplify pattern matching
     let mut token_pair_groups: HashMap<String, Vec<(ActionNodeId, &DexSwap)>> = HashMap::new();
