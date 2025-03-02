@@ -21,23 +21,23 @@ pub fn classify_sandwich_attack(root: ActionNodeId, tree: &mut ActionTree) {
             for child_id in tree.descendants(txn_id) {
                 if let Action::DexSwap(swap) = tree.get(child_id).unwrap().get() {
 
-										// Pre-extract the owner address
-										let owner_address = txn
-										.static_keys
-										.get(0)
-										.expect("Expected at least one static key")
-										.clone();
+									// Pre-extract the owner address
+									let owner_address = txn
+									.static_keys
+									.get(0)
+									.expect("Expected at least one static key")
+									.clone();
 
-                    // Group the DexSwap along with the static key
-                    // (ensure you update the type of your grouped structure accordingly)
-                    let mut token_pair_vec =
-                        vec![swap.input_mint.to_string(), swap.output_mint.to_string()];
-                    token_pair_vec.sort_unstable();
-                    let token_pair = token_pair_vec.join("-");
-                    token_pair_groups
-                        .entry(token_pair)
-                        .or_default()
-                        .push((txn_id, owner_address, swap));
+									// Group the DexSwap along with the static key
+									// (ensure you update the type of your grouped structure accordingly)
+									let mut token_pair_vec =
+										vec![swap.input_mint.to_string(), swap.output_mint.to_string()];
+									token_pair_vec.sort_unstable();
+									let token_pair = token_pair_vec.join("-");
+									token_pair_groups
+										.entry(token_pair)
+										.or_default()
+										.push((txn_id, owner_address, swap));
                 }
             }
         }
