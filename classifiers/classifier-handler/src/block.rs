@@ -38,7 +38,12 @@ pub fn classify_block(
         }
     };
 
-    let root_action = Block::new(slot, block.parent_slot, block_time);
+		let validator_pubkey: Option<String> = match block.rewards {
+			Some(rewards) => Some(rewards.first().unwrap().pubkey.clone()),
+			None => None
+		};
+
+    let root_action = Block::new(slot, block.parent_slot, block_time, validator_pubkey);
 
     let mut tree = ActionTree::new(root_action.into());
     let block_id = tree.root();
