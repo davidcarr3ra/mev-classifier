@@ -23,6 +23,10 @@ impl MongoSerialize for Block {
             "block_time": self.block_time,
         };
 
+        if let Some(validator_pubkey) = &self.validator_pubkey {
+            document.insert("validator_pubkey", validator_pubkey.clone());
+        }
+
         if let Some(total_base_fees) = self.total_base_fees {
             document.insert(
                 "total_base_fees",
