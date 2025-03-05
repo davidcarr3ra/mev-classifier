@@ -1,6 +1,5 @@
 use macros::action;
 use serde::Serialize;
-
 use super::ActionTrait;
 
 #[derive(Serialize)]
@@ -13,14 +12,17 @@ pub struct Block {
     pub total_base_fees: Option<u64>,
     pub total_priority_fees: Option<u64>,
     pub total_tips: Option<u64>,
+
+		pub validator_pubkey: Option<String>,
 }
 
 impl Block {
-    pub fn new(slot: u64, parent_slot: u64, block_time: i64) -> Self {
+    pub fn new(slot: u64, parent_slot: u64, block_time: i64, validator_pubkey: Option<String>) -> Self {
         Self {
             slot,
             parent_slot,
             block_time,
+            validator_pubkey,
             total_base_fees: None,
             total_priority_fees: None,
             total_tips: None,
