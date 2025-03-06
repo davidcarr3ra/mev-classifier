@@ -3,7 +3,7 @@ use classifier_core::ClassifiableTransaction;
 use mongodb::bson;
 use solana_sdk::pubkey::Pubkey;
 
-fn pubkey_to_bson(pubkey: &Pubkey) -> bson::Binary {
+pub fn pubkey_to_bson(pubkey: &Pubkey) -> bson::Binary {
     bson::Binary {
         subtype: bson::spec::BinarySubtype::Generic,
         bytes: pubkey.to_bytes().to_vec(),
