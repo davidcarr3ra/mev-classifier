@@ -24,7 +24,10 @@ impl MongoSerialize for Block {
         };
 
         if let Some(validator_pubkey) = &self.validator_pubkey {
-            document.insert("validator_pubkey", validator_pubkey.clone());
+            document.insert(
+                "validator_pubkey",
+                validator_pubkey,
+            );
         }
 
         if let Some(total_base_fees) = self.total_base_fees {
