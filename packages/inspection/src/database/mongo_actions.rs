@@ -3,7 +3,7 @@ use classifier_core::ClassifiableTransaction;
 use mongodb::bson;
 use solana_sdk::pubkey::Pubkey;
 
-fn pubkey_to_bson(pubkey: &Pubkey) -> bson::Binary {
+pub fn pubkey_to_bson(pubkey: &Pubkey) -> bson::Binary {
     bson::Binary {
         subtype: bson::spec::BinarySubtype::Generic,
         bytes: pubkey.to_bytes().to_vec(),
@@ -22,6 +22,13 @@ impl MongoSerialize for Block {
             "_id": self.slot as i64,
             "block_time": self.block_time,
         };
+
+        if let Some(validator_pubkey) = &self.validator_pubkey {
+            document.insert(
+                "validator_pubkey",
+                validator_pubkey,
+            );
+        }
 
         if let Some(total_base_fees) = self.total_base_fees {
             document.insert(

@@ -1,9 +1,9 @@
 use actions::{Action, ActionDescendants, ActionNodeId, ActionTrait, ActionTree};
-use classifier_core::ClassifiableTransaction;
+use classifier_core::{ClassifiableTransaction, SandwichAttackTag, TransactionTag};
 use mongodb::bson::{self};
 use thiserror::Error;
 
-use super::mongo_actions::MongoSerialize;
+use super::mongo_actions::{MongoSerialize, pubkey_to_bson};
 
 #[derive(Debug, Error)]
 pub enum DocumentBuilderError {
@@ -84,7 +84,7 @@ fn build_action_stack(
                 let tx_meta = build_transaction_document(
                     slot_height,
                     *ordering,
-                    tx,
+                    &tx,
                     &mut descendants_iter,
                     tree,
                     descendant_id,
@@ -126,6 +126,50 @@ fn build_transaction_document(
 ) -> bson::Document {
     let mut parent_stack = vec![tx_id];
     let mut transaction_metadata = vec![];
+    let mut tags = vec![];
+
+    // Get transaction tags if they exist
+    for tag in &tx.tags {
+        match tag {
+            TransactionTag::AtomicArbitrage(arb) => {
+                tags.push(bson::doc! {
+                    "type": "atomicArbitrage",
+                    "mint": pubkey_to_bson(&arb.mint),
+                    "profitAmount": arb.profit_amount.to_string(),
+                    "address": pubkey_to_bson(&arb.address),
+                });
+            }
+            TransactionTag::SandwichAttack(sandwich) => {
+                match sandwich {
+                    SandwichAttackTag::Frontrun { token_bought, amount, attacker_pubkey } => {
+                        tags.push(bson::doc! {
+                            "type": "sandwich_frontrun", 
+                            "tokenBought": pubkey_to_bson(token_bought),
+                            "amount": *amount as i64,
+                            "attackerPubkey": pubkey_to_bson(attacker_pubkey),
+                        });
+                    }
+                    SandwichAttackTag::Victim { token_bought, amount, victim_pubkey } => {
+                        tags.push(bson::doc! {
+                            "type": "sandwich_victim",
+                            "tokenBought": pubkey_to_bson(token_bought),
+                            "amount": *amount as i64,
+                            "victimPubkey": pubkey_to_bson(victim_pubkey),
+                        });
+                    }
+                    SandwichAttackTag::Backrun { token_sold, amount, attacker_pubkey, profit_amount } => {
+                        tags.push(bson::doc! {
+                            "type": "sandwich_backrun",
+                            "tokenSold": pubkey_to_bson(token_sold),
+                            "amount": *amount as i64,
+                            "attackerPubkey": pubkey_to_bson(attacker_pubkey),
+                            "profitAmount": profit_amount.to_string(),
+                        });
+                    }
+                }
+            }
+        }
+    }
 
     while let Some(descendant_id) = descendants_iter.peek() {
         let descendant_node = tree.get(*descendant_id).unwrap();
@@ -139,12 +183,9 @@ fn build_transaction_document(
             break;
         }
 
-        // Advance iterator now that this node is confirmed to be in
-        // transaction subtree
         parent_stack.push(*descendant_id);
         descendants_iter.next();
 
-        // Attempt to store metadata
         let descendant = descendant_node.get();
         let mut metadata = match descendant.metadata_bson() {
             Some(metadata) => metadata,
@@ -160,6 +201,9 @@ fn build_transaction_document(
     document.insert("metadata", transaction_metadata);
     document.insert("block_order", ordering as u32);
     document.insert("block_id", slot_height);
+    if !tags.is_empty() {
+        document.insert("tags", tags);
+    }
 
     document
 }
